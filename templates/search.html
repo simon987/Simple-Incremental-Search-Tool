@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<style>
+    .fit:hover {
+        -webkit-transform:scale(2.5);
+        -moz-transform:scale(2.5);
+        -ms-transform:scale(2.5);
+        -o-transform:scale(2.5);
+        transform:scale(2.5);
+
+    }
+
+    .fit {
+        width: 100%;
+        height: 100%;
+    }
+
+    .image-container{
+        width: 305px;
+        height: 300px;
+        background-color: #ccc;
+        overflow: hidden;
+
+    }
+
+    .doc-container {
+        height: 330px;
+        display: inline-block;
+    }
+
+    .doc-caption {
+        display: inline-block;
+    }
+</style>
+
+<div class="photos">
+
+    {% for doc in docs %}
+    {% if doc.type == "audio" %}
+    <div class="image-container">
+        <audio controls class="fit">
+            <!--<source src="files/{{doc.doc_id}}">-->
+        </audio>
+    </div>
+    {% else %}
+    <a href="/files/{{doc.doc_id}}">
+        <div class="doc-container">
+            <div class="image-container">
+                <img class="fit" src="/thumbs/{{doc.doc_id}}">
+            </div>
+            <span class="doc-caption" style="font-size: 8pt">{{doc.name}}</span>
+
+        </div>
+
+    </a>
+    {% endif %}
+    {% endfor %}
+
+</div>
+
+</body>
+
+
+</html>
+
