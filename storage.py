@@ -1,9 +1,32 @@
 import sqlite3
 import os
+import flask_bcrypt
+
+
+class CheckSumCalculator:
+
+    def checksum(self, string: str):
+
+        return flask_bcrypt.generate_password_hash(string, 14)  # todo load from config
 
 
 class DuplicateDirectoryException(Exception):
     pass
+
+
+class DuplicateUsernameException(Exception):
+    pass
+
+
+class User:
+    """
+    Data structure to hold user information
+    """
+
+    def __init__(self, username: str, hashed_password: bytes, admin: bool):
+        self.username = username
+        self.hashed_password = hashed_password
+        self.admin = admin
 
 
 class Directory:
@@ -25,22 +48,20 @@ class LocalStorage:
     Could be refactored into a abstract class to switch from SQLite3 to something else
     """
 
-    cache_outdated = True
-    """Static variable that indicates that the database was changed since the last time it was cached in memory"""
-
-    db_path = "../local_storage.db"
-
-    def __init__(self):
+    def __init__(self, db_path):
         self.cached_dirs = {}
+        self.cached_users = {}
+        self.db_path = db_path
+        self.dir_cache_outdated = True  # Indicates that the database was changed since it was cached in memory
+        self.user_cache_outdated = True
         pass
 
-    @staticmethod
-    def init_db(script_path):
+    def init_db(self, script_path):
         """Creates a blank database. Overwrites the old one"""
-        if os.path.isfile(LocalStorage.db_path):
-            os.remove(LocalStorage.db_path)
+        if os.path.isfile(self.db_path):
+            os.remove(self.db_path)
 
-        conn = sqlite3.connect(LocalStorage.db_path)
+        conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         with open(script_path, "r") as f:
             c.executescript(f.read())
@@ -56,9 +77,9 @@ class LocalStorage:
         :return: None
         """
 
-        LocalStorage.cache_outdated = True
+        self.dir_cache_outdated = True
 
-        conn = sqlite3.connect(LocalStorage.db_path)
+        conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         c.execute("PRAGMA FOREIGN_KEYS = ON;")
         try:
@@ -79,11 +100,11 @@ class LocalStorage:
 
     def dirs(self):
 
-        if LocalStorage.cache_outdated:
+        if self.dir_cache_outdated:
 
             self.cached_dirs = {}
 
-            conn = sqlite3.connect(LocalStorage.db_path)
+            conn = sqlite3.connect(self.db_path)
             c = conn.cursor()
             c.execute("SELECT id, path, enabled FROM Directory")
             db_directories = c.fetchall()
@@ -100,8 +121,63 @@ class LocalStorage:
                         options.append(db_opt[0])
 
                 self.cached_dirs[directory.path] = directory
-                LocalStorage.cache_outdated = False
+                self.dir_cache_outdated = False
                 return self.cached_dirs
 
         else:
             return self.cached_dirs
+
+    def save_user(self, user: User):
+        """Save user to storage"""
+
+        self.user_cache_outdated = True
+
+        try:
+            conn = sqlite3.connect(self.db_path)
+            c = conn.cursor()
+            c.execute("PRAGMA FOREIGN_KEYS = ON;")
+            c.execute("INSERT INTO User (username, password, is_admin) VALUES (?,?,?)",
+                      (user.username, user.hashed_password, user.admin))
+            conn.commit()
+            conn.close()
+        except sqlite3.IntegrityError:
+            raise DuplicateDirectoryException("Duplicate username: " + user.username)
+
+    def users(self):
+        """Get user list"""
+
+        if self.user_cache_outdated:
+
+            self.cached_users = {}
+
+            conn = sqlite3.connect(self.db_path)
+            c = conn.cursor()
+            c.execute("SELECT username, is_admin FROM User")
+
+            db_users = c.fetchall()
+
+            for db_user in db_users:
+                self.cached_users[db_user[0]] = User(db_user[0], "", db_user[1])
+
+            conn.close()
+
+            return self.cached_users
+
+        else:
+            return self.cached_users
+
+    def auth_user(self, username: str, password: str) -> bool:
+        """Authenticates an user"""
+
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("SELECT username, password FROM User WHERE username=?", (username,))
+
+        db_user = c.fetchone()
+
+        if db_user is not None:
+            return flask_bcrypt.check_password_hash(db_user[1], password)
+
+        return False
+
+

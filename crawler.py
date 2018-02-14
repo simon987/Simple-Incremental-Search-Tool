@@ -10,7 +10,7 @@ class FileParser:
     pass
 
 
-class CheckSumCalculator:
+class FileCheckSumCalculator:
 
     def checksum(self, path: str) -> str:
         """
@@ -21,7 +21,7 @@ class CheckSumCalculator:
         raise NotImplementedError()
 
 
-class Md5CheckSumCalculator(CheckSumCalculator):
+class Md5CheckSumCalculator(FileCheckSumCalculator):
 
     def __init__(self):
         self.name = "md5"
@@ -41,7 +41,7 @@ class Md5CheckSumCalculator(CheckSumCalculator):
         return result.hexdigest().upper()
 
 
-class Sha1CheckSumCalculator(CheckSumCalculator):
+class Sha1CheckSumCalculator(FileCheckSumCalculator):
 
     def __init__(self):
         self.name = "sha1"
@@ -61,7 +61,7 @@ class Sha1CheckSumCalculator(CheckSumCalculator):
         return result.hexdigest().upper()
 
 
-class Sha256CheckSumCalculator(CheckSumCalculator):
+class Sha256CheckSumCalculator(FileCheckSumCalculator):
 
     def __init__(self):
         self.name = "sha256"

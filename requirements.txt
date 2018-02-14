@@ -1,2 +1,4 @@
 PIL
 simplejson
+flask
+flask_bcrypt

@@ -35,6 +35,8 @@ CREATE TABLE User (
 CREATE TABLE User_canRead_Directory (
   username TEXT,
   directory_id INTEGER,
-  PRIMARY KEY (username, directory_id)
+  PRIMARY KEY (username, directory_id),
+  FOREIGN KEY (username) REFERENCES User(username),
+  FOREIGN KEY (directory_id) REFERENCES Directory(id)
 
 )
