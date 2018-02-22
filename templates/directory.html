@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+
+{% block title %}An Excellent title{% endblock title %}
+
+{% block body %}
+    <div class="container">
+        <div class="panel panel-default">
+            <div class="panel-heading">An excellent form</div>
+            <div class="panel-body">
+
+                <form method="GET" action="/directory/add">
+
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Display name" name="name">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Absolute path" name="path">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Directory</button>
+                </form>
+
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">An excellent list</div>
+            <div class="panel-body">
+
+                <table class="info-table">
+                    <tr>
+                        <th>Display Name</th>
+                        <th>Path</th>
+                        <th>Enabled</th>
+                        <th>Last indexed</th>
+                        <th>Action</th>
+                    </tr>
+
+                    {% for dir in directories %}
+                        <tr>
+                            <td>{{ directories[dir].name }}</td>
+                            <td><pre style="width: 80%">{{ directories[dir].path }}</pre></td>
+                            <td><i class="far {{ "fa-check-square" if directories[dir].enabled else "fa-square" }}"></i></td>
+                            <td>2018-02-21</td>
+                            <td><a href="directory/{{ dir }}">Manage</a> </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+
+            </div>
+        </div>
+
+
+
+
+    </div>
+{% endblock body %}

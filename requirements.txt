@@ -1,4 +1,6 @@
-PIL
 simplejson
 flask
 flask_bcrypt
+elasticsearch
+python-magic
+requests

@@ -4,6 +4,7 @@ PRAGMA FOREIGN_KEYS = ON;
 CREATE TABLE Directory (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   path TEXT UNIQUE,
+  name TEXT,
   enabled BOOLEAN
 );
 
@@ -19,10 +20,11 @@ CREATE TABLE Task (
 
 -- You can set an option on a directory to change the crawler's behavior
 CREATE TABLE Option (
-  name STRING,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key TEXT,
+  value TEXT,
   directory_id INTEGER,
-  FOREIGN KEY (directory_id) REFERENCES Directory(id),
-  PRIMARY KEY (name, directory_id)
+  FOREIGN KEY (directory_id) REFERENCES Directory(id)
 );
 
 -- User accounts

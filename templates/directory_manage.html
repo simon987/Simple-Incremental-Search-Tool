@@ -1,0 +1,108 @@
+{%  extends "layout.html" %}
+
+{% block title %}An excellent title{% endblock title %}
+
+{% block body %}
+
+    <div class="container">
+
+        <div class="panel panel-default">
+
+            <div class="panel-heading">An excellent summary</div>
+            <div class="panel-body">
+
+                <table class="info-table">
+                    <tr>
+                        <th>Display name</th>
+                        <td>{{ directory.name }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>Path</th>
+                        <td><pre>{{ directory.path }}</pre></td>
+                    </tr>
+
+                    <tr>
+                        <th>Enabled</th>
+                        <td><i class="far {{ "fa-check-square" if directory.enabled else "fa-square" }}"></i></td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">An excellent option list</div>
+            <div class="panel-body">
+                <table class="info-table">
+                    <tr>
+                        <th>Key</th>
+                        <th>Value</th>
+                        <th>Action</th>
+                    </tr>
+                    {% for option in directory.options %}
+
+                        <tr>
+                            <td>{{ option.key }}</td>
+                            <td>{{ option.value }}</td>
+                            <td><a href="/directory/{{ directory.id }}/del_opt/{{ option.id }}" >Remove</a></td>
+                        </tr>
+
+                    {% endfor %}
+                </table>
+
+                <hr>
+
+                <form method="GET" action="/directory/{{ directory.id }}/add_opt">
+
+                    <div class="form-group">
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" placeholder="Key" name="key">
+                        </div>
+
+
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" placeholder="Value" name="value">
+                        </div>
+
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Add option</button>
+                </form>
+
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">An excellent control panel</div>
+            <div class="panel-body">
+
+                <div class="btn-group">
+                    <a class="btn dropdown-toggle btn-primary" data-toggle="dropdown" href="#">
+                        Create a task
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#">Indexing task</a></li>
+                        <li><a href="#">Thumbnail generation task</a></li>
+                    </ul>
+                </div>
+
+                <div class="btn-group">
+                    <a class="btn dropdown-toggle btn-danger" data-toggle="dropdown" href="#">
+                        Action
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/directory/{{ directory.id }}/del">Delete directory</a></li>
+                        <li><a href="#">Reset to default settings</a></li>
+                    </ul>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
+{% endblock body %}

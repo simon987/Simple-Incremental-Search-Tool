@@ -14,7 +14,7 @@ class DuplicateDirectoryException(Exception):
     pass
 
 
-class DuplicateUsernameException(Exception):
+class DuplicateUserException(Exception):
     pass
 
 
@@ -29,14 +29,28 @@ class User:
         self.admin = admin
 
 
+class Option:
+    """
+    Data structure to hold a directory option
+    """
+
+    def __init__(self, key: str, value: str, dir_id: int=None, opt_id: int = None):
+        self.key = key
+        self.value = value
+        self.id = opt_id
+        self.dir_id = dir_id
+
+
 class Directory:
     """
     Data structure to hold directory information
     """
-    def __init__(self, path: str, enabled: bool, options: list):
+    def __init__(self, path: str, enabled: bool, options: list, name: str):
+        self.id = None
         self.path = path
         self.enabled = enabled
         self.options = options
+        self.name = name
 
     def __str__(self):
         return self.path + " | enabled: " + str(self.enabled) + " | opts: " + str(self.options)
@@ -74,31 +88,49 @@ class LocalStorage:
         """
         Save directory to storage
         :param directory: Directory to save
-        :return: None
+        :return: id
         """
 
         self.dir_cache_outdated = True
 
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
-        c.execute("PRAGMA FOREIGN_KEYS = ON;")
         try:
-            c.execute("INSERT INTO Directory (path, enabled) VALUES (?, ?)", (directory.path, directory.enabled))
+            c.execute("INSERT INTO Directory (path, enabled, name) VALUES (?, ?, ?)", (directory.path, directory.enabled, directory.name))
             c.execute("SELECT last_insert_rowid()")
 
             dir_id = c.fetchone()[0]
-
-            for opt in directory.options:
-                conn.execute("INSERT INTO Option (name, directory_id) VALUES (?, ?)", (opt, dir_id))
-
+            c.close()
             conn.commit()
-        except sqlite3.IntegrityError:
-            raise DuplicateDirectoryException("Duplicate directory path: " + directory.path)
-
-        finally:
             conn.close()
 
-    def dirs(self):
+            for opt in directory.options:
+                opt.dir_id = dir_id
+                self.save_option(opt)
+
+            return dir_id
+        except sqlite3.IntegrityError:
+            c.close()
+            conn.close()
+            raise DuplicateDirectoryException("Duplicate directory path: " + directory.path)
+
+    def remove_directory(self, dir_id: int):
+        """Remove a directory from the database"""
+
+        self.dir_cache_outdated = True
+
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+
+        c.execute("DELETE FROM Option WHERE directory_id=?", (dir_id,))
+        c.execute("DELETE FROM Task WHERE directory_id=?", (dir_id,))
+        c.execute("DELETE FROM Directory WHERE id=?", (dir_id,))
+
+        c.close()
+        conn.commit()
+        conn.close()
+
+    def dirs(self) -> dict:
 
         if self.dir_cache_outdated:
 
@@ -106,23 +138,26 @@ class LocalStorage:
 
             conn = sqlite3.connect(self.db_path)
             c = conn.cursor()
-            c.execute("SELECT id, path, enabled FROM Directory")
+            c.execute("SELECT id, path, enabled, name FROM Directory")
             db_directories = c.fetchall()
-            c.execute("SELECT name, directory_id FROM Option")
+            c.execute("SELECT key, value, directory_id, id FROM Option")
             db_options = c.fetchall()
 
             for db_dir in db_directories:
 
                 options = []
-                directory = Directory(db_dir[1], db_dir[2], options)
+                directory = Directory(db_dir[1], db_dir[2], options, db_dir[3])
 
                 for db_opt in db_options:
-                    if db_opt[1] == db_dir[0]:
-                        options.append(db_opt[0])
+                    if db_opt[2] == db_dir[0]:
+                        options.append(Option(db_opt[0], db_opt[1], db_opt[2], db_opt[3]))
 
-                self.cached_dirs[directory.path] = directory
-                self.dir_cache_outdated = False
-                return self.cached_dirs
+                directory.id = db_dir[0]
+
+                self.cached_dirs[directory.id] = directory
+
+            self.dir_cache_outdated = False
+            return self.cached_dirs
 
         else:
             return self.cached_dirs
@@ -135,15 +170,15 @@ class LocalStorage:
         try:
             conn = sqlite3.connect(self.db_path)
             c = conn.cursor()
-            c.execute("PRAGMA FOREIGN_KEYS = ON;")
             c.execute("INSERT INTO User (username, password, is_admin) VALUES (?,?,?)",
                       (user.username, user.hashed_password, user.admin))
+            c.close()
             conn.commit()
             conn.close()
         except sqlite3.IntegrityError:
-            raise DuplicateDirectoryException("Duplicate username: " + user.username)
+            raise DuplicateUserException("Duplicate username: " + user.username)
 
-    def users(self):
+    def users(self) -> dict:
         """Get user list"""
 
         if self.user_cache_outdated:
@@ -157,7 +192,7 @@ class LocalStorage:
             db_users = c.fetchall()
 
             for db_user in db_users:
-                self.cached_users[db_user[0]] = User(db_user[0], "", db_user[1])
+                self.cached_users[db_user[0]] = User(db_user[0], b"", bool(db_user[1]))
 
             conn.close()
 
@@ -179,5 +214,73 @@ class LocalStorage:
             return flask_bcrypt.check_password_hash(db_user[1], password)
 
         return False
+
+    def update_user(self, user: User) -> None:
+        """Updates an user. Will have no effect if the user does not exist"""
+
+        self.user_cache_outdated = True
+
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("UPDATE User SET is_admin=? WHERE username=?", (user.admin, user.username))
+
+        c.close()
+        conn.commit()
+        conn.close()
+
+    def remove_user(self, username: str):
+        """Remove an user from the database"""
+
+        self.user_cache_outdated = True
+
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("DELETE FROM User WHERE username=?", (username,))
+
+        c.close()
+        conn.commit()
+        conn.close()
+
+    def update_directory(self, directory):
+        """Updated a directory (Options are left untouched). Will have no effect if the directory does not exist"""
+
+        self.dir_cache_outdated = True
+
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("UPDATE Directory SET name=?, path=? WHERE id=?", (directory.name, directory.path, directory.id))
+
+        c.close()
+        conn.commit()
+        conn.close()
+
+    def save_option(self, option: Option):
+
+        self.dir_cache_outdated = True
+
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("INSERT INTO Option (key, value, directory_id) VALUES (?, ?, ?)", (option.key, option.value, option.dir_id))
+        c.execute("SELECT last_insert_rowid()")
+
+        opt_id = c.fetchone()[0]
+        c.close()
+        conn.commit()
+        conn.close()
+
+        return opt_id
+
+    def del_option(self, opt_id):
+        """Delete an option from the database"""
+
+        self.dir_cache_outdated = True
+
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("DELETE FROM Option WHERE id=?", (opt_id, ))
+
+        conn.commit()
+        conn.close()
+
 
 

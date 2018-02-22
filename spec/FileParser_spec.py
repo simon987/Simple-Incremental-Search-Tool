@@ -1,38 +1,51 @@
 import os
 from unittest import TestCase
 
-from crawler import GenericFileParser, Md5CheckSumCalculator, Sha1CheckSumCalculator, Sha256CheckSumCalculator
+
+from parsing import GenericFileParser, Md5CheckSumCalculator, Sha1CheckSumCalculator, Sha256CheckSumCalculator, ExtensionMimeGuesser
 
 
 class GenericFileParserTest(TestCase):
 
     def setUp(self):
-        if os.path.exists("test_parse"):
-            os.remove("test_parse")
+        if os.path.exists("test_parse.txt"):
+            os.remove("test_parse.txt")
 
-        test_file = open("test_parse", "w")
+        test_file = open("test_parse.txt", "w")
         test_file.write("12345678")
         test_file.close()
+        os.utime("test_parse.txt", (1330123456, 1330654321))
 
-        self.parser = GenericFileParser([Md5CheckSumCalculator()])
+        self.parser = GenericFileParser([Md5CheckSumCalculator()], ExtensionMimeGuesser())
 
     def tearDown(self):
-        os.remove("test_parse")
+        os.remove("test_parse.txt")
 
     def test_parse_size(self):
-        result = self.parser.parse("test_parse")
+        result = self.parser.parse("test_parse.txt")
 
         self.assertEqual(result["size"], 8)
 
     def test_parse_name(self):
-        result = self.parser.parse("test_parse")
+        result = self.parser.parse("test_parse.txt")
 
-        self.assertEqual(result["name"], "test_parse")
+        self.assertEqual(result["name"], "test_parse.txt")
 
     def test_parse_md5(self):
-        result = self.parser.parse("test_parse")
+        result = self.parser.parse("test_parse.txt")
 
         self.assertEqual(result["md5"], "25D55AD283AA400AF464C76D713C07AD")
+
+    def test_mtime(self):
+
+        result = self.parser.parse("test_parse.txt")
+
+        self.assertEqual(result["mtime"], 1330654321)
+
+    def test_mime(self):
+
+        result = self.parser.parse("test_parse.txt")
+        self.assertEqual(result["mime"], "text/plain")
 
 
 class Md5CheckSumCalculatorTest(TestCase):
@@ -129,3 +142,6 @@ class Sha256CheckSumCalculatorTest(TestCase):
 
         result = self.calculator.checksum("test_sha256_2")
         self.assertEqual(result, "C39C7E0E7D84C9692F3C9C22E1EA0327DEBF1BF531B5738EEA8E79FE27EBC570")
+
+
+

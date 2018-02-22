@@ -1,14 +1,8 @@
-from flask import Flask, render_template, send_file, request
-import pysolr
-import mimetypes
-import requests
-import json
-from PIL import Image
-import os
+from flask import Flask, render_template, send_file, request, redirect
+from indexer import Indexer
+from storage import Directory, Option
 
-SOLR_URL = "http://localhost:8983/solr/test/"
-
-solr = pysolr.Solr(SOLR_URL, timeout=10)
+# indexer = Indexer("fse")
 
 app = Flask(__name__)
 
@@ -124,11 +118,86 @@ app = Flask(__name__)
 #         return send_file("thumbnails/" + doc_id, mimetype=mimetypes.guess_type(thumb_path)[0])
 #     else:
 #         return "File not found"
+from storage import LocalStorage
+storage = LocalStorage("local_storage.db")
 
 
 @app.route("/")
 def tmp_route():
-    return "test"
+    return "huh"
+
+
+@app.route("/directory")
+def directory():
+
+    directories = storage.dirs()
+    print(directories)
+
+    return render_template("directory.html", directories=directories)
+
+
+@app.route("/directory/add")
+def directory_add():
+
+    path = request.args.get("path")
+    name = request.args.get("name")
+
+    print(name)
+
+    if path is not None and name is not None:
+        d = Directory(path, True, [], name)
+        storage.save_directory(d)
+
+        return redirect("/directory")
+
+    return "Error"  # todo better message
+
+
+@app.route("/directory/<int:dir_id>")
+def directory_manage(dir_id):
+
+    directory = storage.dirs()[dir_id]
+
+    return render_template("directory_manage.html", directory=directory)
+
+
+@app.route("/directory/<int:dir_id>/add_opt")
+def directory_add_opt(dir_id):
+
+    key = request.args.get("key")
+    value = request.args.get("value")
+
+    if key is not None and value is not None:
+        storage.save_option(Option(key, value, dir_id))
+
+    return redirect("/directory/" + str(dir_id))
+
+
+@app.route("/directory/<int:dir_id>/del_opt/<int:opt_id>")
+def directory_del_opt(dir_id, opt_id):
+
+    storage.del_option(opt_id)
+
+    return redirect("/directory/" + str(dir_id))
+
+
+@app.route("/directory/<int:dir_id>/del")
+def directory_del(dir_id):
+
+    storage.remove_directory(dir_id)
+
+    return redirect("/directory")
+
+
+@app.route("/task")
+def task():
+
+    return
+
+@app.route("/dashboard")
+def dashboard():
+
+    return render_template("dashboard.html")
 
 
 if __name__ == "__main__":
