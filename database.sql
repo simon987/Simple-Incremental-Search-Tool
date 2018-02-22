@@ -12,7 +12,7 @@ CREATE TABLE Directory (
 CREATE TABLE Task (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   directory_id INTEGER,
-  task_type INTEGER,
+  type INTEGER,
   completed BOOLEAN DEFAULT 0,
   completed_time DATETIME,
   FOREIGN KEY (directory_id) REFERENCES Directory(id)

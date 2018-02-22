@@ -1,10 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "layout.html" %}
 
-</body>
-</html>
+{% block title %}An excellent title{% endblock title %}
+
+{% block body %}
+
+    <div class="container">
+
+        <div class="panel panel-default">
+            <div class="panel-heading">An excellent form</div>
+            <div class="panel-body">
+                <form class="form-inline" action="/task/add">
+                    <label for="type">Create </label>
+                    <select class="form-control" id="type" name="type" >
+                        <option value="1">Indexing</option>
+                        <option value="2">Thumbnail Generation</option>
+                    </select>
+
+                    <label for="directory">task for</label>
+                    <select class="form-control" id="directory" name="directory" >
+                        {% for dir_id in directories %}
+                            <option value="{{ dir_id }}">{{ directories[dir_id].name }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <input type="submit" class="form-control btn btn-success" value="Add">
+                </form>
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">An excellent panel</div>
+            <div class="panel-body">
+
+                <table class="info-table">
+                    <tr>
+                        <th>Task type</th>
+                        <th>Directory</th>
+                        <th>Completed</th>
+                    </tr>
+
+                    {% for task in tasks %}
+
+                        <tr>
+                            <td>{{ task.type }}</td>
+                            <td>{{ directories[task.dir_id].name }}</td>
+                            <td>{{ task.completed }}</td>
+                        </tr>
+
+                    {% endfor %}
+                </table>
+
+
+
+            </div>
+        </div>
+
+    </div>
+
+{% endblock body %}

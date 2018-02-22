@@ -1,5 +1,5 @@
 from unittest import TestCase
-from storage import LocalStorage, Directory, DuplicateDirectoryException, User, DuplicateUserException, Option
+from storage import LocalStorage, Directory, DuplicateDirectoryException, User, DuplicateUserException, Option, Task
 import os
 
 
@@ -178,5 +178,25 @@ class LocalStorageTest(TestCase):
         self.assertEqual(s.dirs()[dir_id].options[0].value, "val2")
         self.assertEqual(s.dirs()[dir_id].options[0].dir_id, 1)
 
+    def test_save_task(self):
+
+        s = LocalStorage("test_database.db")
+
+        dir_id = s.save_directory(Directory("/some/dir", True, [], "my dir"))
+        task_id = s.save_task(Task(0, dir_id))
+
+        self.assertEqual(s.tasks()[task_id].dir_id, dir_id)
+        self.assertEqual(task_id, 1)
+
+    def test_del_task(self):
+        s = LocalStorage("test_database.db")
+
+        dir_id = s.save_directory(Directory("/some/dir", True, [], "my dir"))
+        task_id = s.save_task(Task(0, dir_id))
+
+        s.del_task(task_id)
+
+        with self.assertRaises(KeyError):
+            _ = s.tasks()[task_id]
 
 

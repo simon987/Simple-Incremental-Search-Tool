@@ -192,7 +192,11 @@ def directory_del(dir_id):
 @app.route("/task")
 def task():
 
-    return
+    tasks = storage.tasks()
+    directories = storage.dirs()
+
+    return render_template("task.html", tasks=tasks, directories=directories)
+
 
 @app.route("/dashboard")
 def dashboard():

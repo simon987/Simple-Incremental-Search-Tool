@@ -34,21 +34,25 @@
         <div class="panel panel-default">
             <div class="panel-heading">An excellent option list</div>
             <div class="panel-body">
-                <table class="info-table">
+                <table class="info-table table-striped table-hover">
+                    <thead>
                     <tr>
                         <th>Key</th>
                         <th>Value</th>
                         <th>Action</th>
                     </tr>
+                    </thead>
+                    <tbody>
                     {% for option in directory.options %}
 
                         <tr>
                             <td>{{ option.key }}</td>
                             <td>{{ option.value }}</td>
-                            <td><a href="/directory/{{ directory.id }}/del_opt/{{ option.id }}" >Remove</a></td>
+                            <td><a class="btn btn-danger" href="/directory/{{ directory.id }}/del_opt/{{ option.id }}" >Remove</a></td>
                         </tr>
 
                     {% endfor %}
+                    </tbody>
                 </table>
 
                 <hr>
@@ -67,7 +71,7 @@
 
                     </div>
 
-                    <button type="submit" class="btn btn-primary">Add option</button>
+                    <button type="submit" class="btn btn-success">Add option</button>
                 </form>
 
             </div>

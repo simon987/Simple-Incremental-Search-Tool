@@ -1,7 +1,7 @@
 import sqlite3
 import os
 import flask_bcrypt
-
+import time
 
 class CheckSumCalculator:
 
@@ -56,6 +56,16 @@ class Directory:
         return self.path + " | enabled: " + str(self.enabled) + " | opts: " + str(self.options)
 
 
+class Task:
+
+    def __init__(self, task_type: int, dir_id: int, completed: bool = False, completed_time: time.time = None, task_id: int = None):
+        self.id = task_id
+        self.type = task_type
+        self.dir_id = dir_id
+        self.completed = completed
+        self.completed_time = completed_time
+
+
 class LocalStorage:
     """
     Manages storage of application data to disk.
@@ -65,10 +75,11 @@ class LocalStorage:
     def __init__(self, db_path):
         self.cached_dirs = {}
         self.cached_users = {}
+        self.cached_tasks = {}
         self.db_path = db_path
         self.dir_cache_outdated = True  # Indicates that the database was changed since it was cached in memory
         self.user_cache_outdated = True
-        pass
+        self.task_cache_outdated = True
 
     def init_db(self, script_path):
         """Creates a blank database. Overwrites the old one"""
@@ -282,5 +293,59 @@ class LocalStorage:
         conn.commit()
         conn.close()
 
+    def save_task(self, task: Task):
+        """Save a task to the database"""
 
+        self.task_cache_outdated = True
 
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("INSERT INTO Task (directory_id, type, completed, completed_time) VALUES (?,?,?,?)",
+                  (task.dir_id, task.type, task.completed, task.completed_time))
+        c.execute("SELECT last_insert_rowid()")
+
+        task_id = c.fetchone()[0]
+
+        conn.commit()
+        c.close()
+        conn.close()
+
+        return task_id
+
+    def tasks(self):
+        """Get the (cached) list of taks"""
+
+        if self.task_cache_outdated:
+
+            conn = sqlite3.connect(self.db_path)
+            c = conn.cursor()
+            c.execute("SELECT id, directory_id, type, completed, completed_time FROM Task")
+
+            tasks = c.fetchall()
+
+            c.close()
+            conn.close()
+
+            for db_task in tasks:
+
+                task = Task(db_task[2], db_task[1], db_task[3], db_task[4], db_task[0])
+                self.cached_tasks[task.id] = task
+
+            self.task_cache_outdated = False
+            return self.cached_tasks
+
+        else:
+            return self.cached_tasks
+
+    def del_task(self, task_id):
+        """Delete a task from the database"""
+
+        self.task_cache_outdated = True
+
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("DELETE FROM Task WHERE id=?", (task_id, ))
+
+        c.close()
+        conn.commit()
+        conn.close()
