@@ -4,27 +4,102 @@
 
 {% block body %}
 
+    <script>
+
+        function swapToForm(elem, fields, formAction, inputName) {
+
+            var form = document.createElement("form");
+            form.setAttribute("action", formAction);
+
+            for (var i in fields) {
+
+                var hiddenInput = document.createElement("input");
+                hiddenInput.setAttribute("type", "hidden");
+                hiddenInput.setAttribute("value", fields[i].value);
+                hiddenInput.setAttribute("name", fields[i].name);
+                form.appendChild(hiddenInput);
+            }
+
+            var input = document.createElement("input");
+            input.setAttribute("class", "form-control");
+            input.setAttribute("type", "text");
+            input.setAttribute("name", inputName);
+            input.value = elem.innerHTML;
+            form.appendChild(input);
+
+            elem.parentNode.insertBefore(form, elem);
+            elem.remove();
+
+            input.focus();
+            input.addEventListener("focusout", function () {
+                form.submit();
+            });
+
+            return input;
+        }
+
+        function modifyKey(optId, value) {
+
+            swapToForm(document.getElementById("key-" + optId), [
+                {name: "id", value: optId},
+                {name: "value", value: value},
+                {name: "dir_id", value: {{ directory.id }}}
+            ], "/directory/{{ directory.id }}/update_opt", "key");
+
+        }
+
+        function modifyVal(optId, key) {
+            swapToForm(document.getElementById("val-" + optId), [
+                {name: "id", value: optId},
+                {name: "key", value: key},
+                {name: "dir_id", value: {{ directory.id }}}
+            ], "/directory/{{ directory.id }}/update_opt", "value");
+        }
+
+        function modifyDisplayName() {
+            swapToForm(document.getElementById("display-name"), [],
+                "/directory/{{ directory.id }}/update", "name");
+        }
+
+        function modifyPath() {
+            swapToForm(document.getElementById("path"), [],
+                "/directory/{{ directory.id }}/update", "path");
+        }
+
+    </script>
+
     <div class="container">
 
         <div class="panel panel-default">
 
-            <div class="panel-heading">An excellent summary</div>
+            <div class="panel-heading">Summary</div>
             <div class="panel-body">
 
                 <table class="info-table">
-                    <tr>
+                    <tr onclick="modifyDisplayName()">
                         <th>Display name</th>
-                        <td>{{ directory.name }}</td>
+                        <td>
+                            <span id="display-name" title="Click to update">{{ directory.name }}</span>
+                        </td>
                     </tr>
 
-                    <tr>
+                    <tr onclick="modifyPath()">
                         <th>Path</th>
-                        <td><pre>{{ directory.path }}</pre></td>
+                        <td>
+                            <pre id="path" title="Click to update">{{ directory.path }}</pre>
+                        </td>
                     </tr>
 
                     <tr>
                         <th>Enabled</th>
-                        <td><i class="far {{ "fa-check-square" if directory.enabled else "fa-square" }}"></i></td>
+                        <td>
+                            <i class="far {{ "fa-check-square" if directory.enabled else "fa-square" }}"></i>
+                            <form action="/directory/{{ directory.id }}/update"  style="display: inline;">
+                                <input type="hidden" name="enabled" value="{{ "0" if directory.enabled else "1" }}">
+                                <input type="submit" class="btn {{ "btn-danger" if directory.enabled else "btn-success" }}"
+                                       value="{{ "Disable" if directory.enabled else "Enable" }}">
+                            </form>
+                        </td>
                     </tr>
                 </table>
             </div>
@@ -46,12 +121,14 @@
                     {% for option in directory.options %}
 
                         <tr>
-                            <td>{{ option.key }}</td>
-                            <td>{{ option.value }}</td>
-                            <td><a class="btn btn-danger" href="/directory/{{ directory.id }}/del_opt/{{ option.id }}" >Remove</a></td>
+                            <td style="width: 40%" onclick="modifyKey({{ option.id }}, '{{ option.value }}')" title="Click to update"><span id="key-{{ option.id }}">{{ option.key }}</span></td>
+                            <td style="width: 40%" onclick="modifyVal({{ option.id }}, '{{ option.key }}')" title="Click to update"><span id="val-{{ option.id }}">{{ option.value }}</span></td>
+                            <td><a id="opt-{{ option.id }}-btn" class="btn btn-danger" href="/directory/{{ directory.id }}/del_opt/{{ option.id }}" >Remove</a></td>
                         </tr>
 
+
                     {% endfor %}
+
                     </tbody>
                 </table>
 

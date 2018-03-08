@@ -4,12 +4,13 @@
 
 {% block body %}
     <div class="container">
+
+        {# Add directory form #}
         <div class="panel panel-default">
             <div class="panel-heading">An excellent form</div>
             <div class="panel-body">
 
                 <form method="GET" action="/directory/add">
-
                     <div class="form-group">
                         <input type="text" class="form-control" placeholder="Display name" name="name">
                     </div>
@@ -22,6 +23,7 @@
             </div>
         </div>
 
+        {# List of directories #}
         <div class="panel panel-default">
             <div class="panel-heading">An excellent list</div>
             <div class="panel-body">
@@ -52,9 +54,5 @@
 
             </div>
         </div>
-
-
-
-
     </div>
 {% endblock body %}

@@ -3,10 +3,10 @@ import os
 import flask_bcrypt
 import time
 
+
 class CheckSumCalculator:
 
     def checksum(self, string: str):
-
         return flask_bcrypt.generate_password_hash(string, 14)  # todo load from config
 
 
@@ -58,7 +58,8 @@ class Directory:
 
 class Task:
 
-    def __init__(self, task_type: int, dir_id: int, completed: bool = False, completed_time: time.time = None, task_id: int = None):
+    def __init__(self, task_type: int, dir_id: int, completed: bool = False, completed_time: time.time = None,
+                 task_id: int = None):
         self.id = task_id
         self.type = task_type
         self.dir_id = dir_id
@@ -107,7 +108,8 @@ class LocalStorage:
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         try:
-            c.execute("INSERT INTO Directory (path, enabled, name) VALUES (?, ?, ?)", (directory.path, directory.enabled, directory.name))
+            c.execute("INSERT INTO Directory (path, enabled, name) VALUES (?, ?, ?)",
+                      (directory.path, directory.enabled, directory.name))
             c.execute("SELECT last_insert_rowid()")
 
             dir_id = c.fetchone()[0]
@@ -259,7 +261,8 @@ class LocalStorage:
 
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
-        c.execute("UPDATE Directory SET name=?, path=? WHERE id=?", (directory.name, directory.path, directory.id))
+        c.execute("UPDATE Directory SET name=?, path=?, enabled=? WHERE id=?",
+                  (directory.name, directory.path, directory.enabled, directory.id))
 
         c.close()
         conn.commit()
@@ -271,7 +274,8 @@ class LocalStorage:
 
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
-        c.execute("INSERT INTO Option (key, value, directory_id) VALUES (?, ?, ?)", (option.key, option.value, option.dir_id))
+        c.execute("INSERT INTO Option (key, value, directory_id) VALUES (?, ?, ?)",
+                  (option.key, option.value, option.dir_id))
         c.execute("SELECT last_insert_rowid()")
 
         opt_id = c.fetchone()[0]
@@ -289,6 +293,18 @@ class LocalStorage:
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         c.execute("DELETE FROM Option WHERE id=?", (opt_id, ))
+
+        conn.commit()
+        conn.close()
+
+    def update_option(self, option: Option):
+        """Updates an option"""
+
+        self.dir_cache_outdated = True
+
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("UPDATE Option SET key=?, value=? WHERE id=?", (option.key, option.value, option.id))
 
         conn.commit()
         conn.close()
@@ -316,6 +332,8 @@ class LocalStorage:
         """Get the (cached) list of taks"""
 
         if self.task_cache_outdated:
+
+            self.cached_tasks = {}
 
             conn = sqlite3.connect(self.db_path)
             c = conn.cursor()
@@ -346,6 +364,6 @@ class LocalStorage:
         c = conn.cursor()
         c.execute("DELETE FROM Task WHERE id=?", (task_id, ))
 
-        c.close()
         conn.commit()
+        c.close()
         conn.close()

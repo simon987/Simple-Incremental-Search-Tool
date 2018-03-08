@@ -25,7 +25,6 @@ class LocalStorageTest(TestCase):
         self.assertEqual(storage.dirs()[dir_id].options[0].value, "val1")
         self.assertEqual(storage.dirs()[dir_id].options[0].dir_id, 1)
 
-
     def test_save_and_retrieve_dir_persistent(self):
 
         s1 = LocalStorage("test_database.db")
@@ -140,6 +139,7 @@ class LocalStorageTest(TestCase):
         dir_id = s.save_directory(d)
 
         d.name = "A modified name"
+        d.enabled = False
         d.path = "/another/directory"
         d.id = dir_id
 
@@ -150,6 +150,7 @@ class LocalStorageTest(TestCase):
         self.assertEqual(s2.dirs()[dir_id].name, "A modified name")
         self.assertEqual(len(s2.dirs()[dir_id].options), 2)
         self.assertEqual(s2.dirs()[dir_id].path, "/another/directory")
+        self.assertEqual(s2.dirs()[dir_id].enabled, 0)  # enabled = false
 
     def test_save_option(self):
 
@@ -178,6 +179,17 @@ class LocalStorageTest(TestCase):
         self.assertEqual(s.dirs()[dir_id].options[0].value, "val2")
         self.assertEqual(s.dirs()[dir_id].options[0].dir_id, 1)
 
+    def test_update_option(self):
+
+        s = LocalStorage("test_database.db")
+
+        d = Directory("/some/directory", True, [Option("key1", "val1"), Option("key2", "val2")], "An excellent name")
+        dir_id = s.save_directory(d)
+
+        s.update_option(Option("key1", "newVal", dir_id, 1))
+
+        self.assertEqual(s.dirs()[dir_id].options[0].value, "newVal")
+
     def test_save_task(self):
 
         s = LocalStorage("test_database.db")
@@ -194,9 +206,13 @@ class LocalStorageTest(TestCase):
         dir_id = s.save_directory(Directory("/some/dir", True, [], "my dir"))
         task_id = s.save_task(Task(0, dir_id))
 
-        s.del_task(task_id)
+        s2 = LocalStorage("test_database.db")
+        s2.tasks()
+        s2.del_task(task_id)
+
+        self.assertEqual(len(s2.tasks()), 0)
 
         with self.assertRaises(KeyError):
-            _ = s.tasks()[task_id]
+            _ = s2.tasks()[task_id]
 
 
