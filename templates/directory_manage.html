@@ -70,10 +70,10 @@
 
     <div class="container">
 
-        <div class="panel panel-default">
+        <div class="card">
 
-            <div class="panel-heading">Summary</div>
-            <div class="panel-body">
+            <div class="card-header">Summary</div>
+            <div class="card-body">
 
                 <table class="info-table">
                     <tr onclick="modifyDisplayName()">
@@ -106,9 +106,9 @@
 
         </div>
 
-        <div class="panel panel-default">
-            <div class="panel-heading">An excellent option list</div>
-            <div class="panel-body">
+        <div class="card">
+            <div class="card-header">An excellent option list</div>
+            <div class="card-body">
                 <table class="info-table table-striped table-hover">
                     <thead>
                     <tr>
@@ -136,48 +136,41 @@
 
                 <form method="GET" action="/directory/{{ directory.id }}/add_opt">
 
-                    <div class="form-group">
-                        <div class="col-sm-4">
+                    <div class="form-row">
+                        <div class="col">
                             <input type="text" class="form-control" placeholder="Key" name="key">
                         </div>
 
-
-                        <div class="col-sm-4">
+                        <div class="col">
                             <input type="text" class="form-control" placeholder="Value" name="value">
                         </div>
-
+                        <button type="submit" class="btn btn-success">Add option</button>
                     </div>
 
-                    <button type="submit" class="btn btn-success">Add option</button>
                 </form>
 
             </div>
         </div>
 
-        <div class="panel panel-default">
-            <div class="panel-heading">An excellent control panel</div>
-            <div class="panel-body">
+        <div class="card">
+            <div class="card-header">An excellent control panel</div>
+            <div class="card-body">
 
-                <div class="btn-group">
-                    <a class="btn dropdown-toggle btn-primary" data-toggle="dropdown" href="#">
-                        Create a task
-                        <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a href="#">Indexing task</a></li>
-                        <li><a href="#">Thumbnail generation task</a></li>
-                    </ul>
+                <div class="dropdown">
+                    <button class="btn dropdown-toggle btn-primary" data-toggle="dropdown">Create a task</button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="#">Indexing task</a>
+                        <a class="dropdown-item" href="#">Thumbnail generation task</a>
+                    </div>
                 </div>
 
-                <div class="btn-group">
-                    <a class="btn dropdown-toggle btn-danger" data-toggle="dropdown" href="#">
-                        Action
-                        <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a href="/directory/{{ directory.id }}/del">Delete directory</a></li>
-                        <li><a href="#">Reset to default settings</a></li>
-                    </ul>
+                <div class="dropdown">
+                    <button class="btn dropdown-toggle btn-danger" data-toggle="dropdown" aria-haspopup="true">Action</button>
+
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="/directory/{{ directory.id }}/del">Delete directory</a>
+                        <a class="dropdown-item" href="#">Reset to default settings</a>
+                    </div>
                 </div>
 
             </div>

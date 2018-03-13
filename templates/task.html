@@ -4,11 +4,42 @@
 
 {% block body %}
 
+    <style>
+        .task-wrapper {
+            border: #dddddd 1px solid;
+            border-radius: 4px;
+            padding: 5px 10px;
+            margin-bottom: 0.5em;
+        }
+
+        .task-name {
+            color: #9CA0A2;
+        }
+
+        .task-info {
+
+        }
+
+        .progress {
+            position: relative;
+            height: 100%;
+
+        }
+
+        .progress span {
+            position: absolute;
+            display: block;
+            width: 100%;
+            color: black;
+        }
+
+    </style>
+
     <div class="container">
 
-        <div class="panel panel-default">
-            <div class="panel-heading">An excellent form</div>
-            <div class="panel-body">
+        <div class="card">
+            <div class="card-header">An excellent form</div>
+            <div class="card-body">
                 <form class="form-inline" action="/task/add">
                     <label for="type">Create </label>
                     <select class="form-control" id="type" name="type" >
@@ -28,36 +59,61 @@
             </div>
         </div>
 
-        <div class="panel panel-default">
-            <div class="panel-heading">An excellent panel</div>
-            <div class="panel-body">
-
-                <table class="info-table table-hover table-striped">
-                    <thead>
-                    <tr>
-                        <th>Task type</th>
-                        <th>Directory</th>
-                        <th>Completed</th>
-                        <th>Action</th>
-                    </tr>
-                    </thead>
-
-                    <tbody>
-                    {% for task_id in tasks %}
-
-                        <tr>
-                            <td>{{ tasks[task_id].type }}</td>
-                            <td>{{ directories[tasks[task_id].dir_id].name }}</td>
-                            <td>{{ tasks[task_id].completed }}</td>
-                            <td><a class="btn btn-danger" href="/task/{{ task_id }}/del">Cancel</a></td>
-                        </tr>
-
-                    {% endfor %}
-                    </tbody>
-
-                </table>
 
 
+        <script>
+            function updateProgressBar() {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState === 4 && this.status === 200) {
+
+                        if(this.responseText.length === 0) {
+                            return;
+                        }
+
+                        var currentTask = JSON.parse(this.responseText);
+                        var percent = currentTask.parsed / currentTask.total * 100;
+
+                        try {
+                            document.getElementById("task-bar-" + currentTask.id).setAttribute("style", "width: " + percent + "%;");
+                            document.getElementById("task-label-" + currentTask.id).innerHTML = currentTask.parsed + " / " + currentTask.total + "  (" + percent.toFixed(2) + "%)";
+                        } catch (e) {
+                            window.reload();
+                        }
+
+                    }
+                };
+                xhttp.open("GET", "/task/current", true);
+                xhttp.send();
+            }
+
+            window.setInterval(updateProgressBar, 125);
+        </script>
+
+
+        <div class="card">
+            <div class="card-header">An excellent panel</div>
+            <div class="card-body">
+                {% for task_id in tasks | sort()%}
+                    <div class="task-wrapper container-fluid">
+                        <span class="task-name">{{ directories[tasks[task_id].dir_id].name }} - </span>
+                        <span class="task-info">{{ tasks[task_id].type }}</span>
+
+                        <div class="d-flex p-2">
+                            <div class="container-fluid p-2">
+                                <div class="progress">
+                                    <div id="task-bar-{{ task_id }}" class="progress-bar" role="progressbar" style="width: 0;">
+                                        <span id="task-label-{{ task_id }}">Queued</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-2"><a class="btn btn-danger" href="/task/{{ task_id }}/del">Cancel</a></div>
+                        </div>
+
+                    </div>
+
+                {% endfor %}
 
             </div>
         </div>

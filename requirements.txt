@@ -4,3 +4,4 @@ flask_bcrypt
 elasticsearch
 python-magic
 requests
+apscheduler
