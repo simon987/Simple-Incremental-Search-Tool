@@ -4,7 +4,7 @@ import json
 from multiprocessing import Process, Value
 from apscheduler.schedulers.background import BackgroundScheduler
 from parsing import GenericFileParser, Md5CheckSumCalculator, ExtensionMimeGuesser
-import time
+from indexer import Indexer
 
 
 class RunningTask:
@@ -13,6 +13,7 @@ class RunningTask:
         self.total_files = 0
         self.parsed_files = Value("i", 0)
         self.task = task
+        self.done = Value("i", 0)
 
     def to_json(self):
         return json.dumps({"parsed": self.parsed_files.value, "total": self.total_files, "id": self.task.id})
@@ -67,6 +68,7 @@ class TaskManager:
         self.current_task = None
         self.storage = storage
         self.current_process = None
+        self.indexer = Indexer("changeme")
 
         scheduler = BackgroundScheduler()
         scheduler.add_job(self.check_new_task, "interval", seconds=0.5)
@@ -75,20 +77,25 @@ class TaskManager:
     def start_task(self, task: Task):
         self.current_task = RunningTask(task)
 
-        c = Crawler([GenericFileParser([Md5CheckSumCalculator()], ExtensionMimeGuesser())])
+        c = Crawler([])
         path = self.storage.dirs()[task.dir_id].path
         self.current_task.total_files = c.countFiles(path)
 
         print("Started task - " + str(self.current_task.total_files) + " files")
         print(path)
 
-        self.current_process = Process(target=self.execute_crawl, args=(c, path, self.current_task.parsed_files))
-        self.current_process.daemon = True
+        self.current_process = Process(target=self.execute_crawl, args=(path, self.current_task.parsed_files, self.current_task.done))
+        # self.current_process.daemon = True
         self.current_process.start()
 
-    def execute_crawl(self, c: Crawler, path: str, counter: Value):
+    def execute_crawl(self, path: str, counter: Value, done: Value):
+        c = Crawler([GenericFileParser([Md5CheckSumCalculator()], ExtensionMimeGuesser())])
         c.crawl(path, counter)
+
+        Indexer("changeme").index(c.documents)
+
         print("Done")
+        done.value = 1
 
     def cancel_task(self):
         self.current_task = None
@@ -101,9 +108,7 @@ class TaskManager:
                 if not self.storage.tasks()[i].completed:
                     self.start_task(self.storage.tasks()[i])
         else:
-            print(self.current_task.parsed_files.value)
-
-            if self.current_task.parsed_files.value == self.current_task.total_files:
+            if self.current_task.done.value == 1:
 
                 self.current_process.terminate()
                 self.storage.del_task(self.current_task.task.id)

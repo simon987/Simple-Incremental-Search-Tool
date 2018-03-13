@@ -75,8 +75,15 @@
                         var percent = currentTask.parsed / currentTask.total * 100;
 
                         try {
-                            document.getElementById("task-bar-" + currentTask.id).setAttribute("style", "width: " + percent + "%;");
+
+                            var bar = document.getElementById("task-bar-" + currentTask.id);
+                            bar.setAttribute("style", "width: " + percent + "%;");
                             document.getElementById("task-label-" + currentTask.id).innerHTML = currentTask.parsed + " / " + currentTask.total + "  (" + percent.toFixed(2) + "%)";
+
+                            if (percent === 100) {
+                                bar.classList.add("bg-success")
+                            }
+
                         } catch (e) {
                             window.reload();
                         }
