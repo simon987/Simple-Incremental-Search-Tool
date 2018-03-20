@@ -5,18 +5,19 @@ from multiprocessing import Process, Value
 from apscheduler.schedulers.background import BackgroundScheduler
 from parsing import GenericFileParser, Md5CheckSumCalculator, ExtensionMimeGuesser
 from indexer import Indexer
+from search import Search
 
 
 class RunningTask:
 
     def __init__(self, task: Task):
-        self.total_files = 0
+        self.total_files = Value("i", 0)
         self.parsed_files = Value("i", 0)
         self.task = task
         self.done = Value("i", 0)
 
     def to_json(self):
-        return json.dumps({"parsed": self.parsed_files.value, "total": self.total_files, "id": self.task.id})
+        return json.dumps({"parsed": self.parsed_files.value, "total": self.total_files.value, "id": self.task.id})
 
 
 class Crawler:
@@ -77,24 +78,36 @@ class TaskManager:
     def start_task(self, task: Task):
         self.current_task = RunningTask(task)
 
-        c = Crawler([])
-        path = self.storage.dirs()[task.dir_id].path
-        self.current_task.total_files = c.countFiles(path)
+        if task.type == Task.INDEX:
+            c = Crawler([])
+            path = self.storage.dirs()[task.dir_id].path
+            self.current_task.total_files.value = c.countFiles(path)
 
-        print("Started task - " + str(self.current_task.total_files) + " files")
-        print(path)
+            self.current_process = Process(target=self.execute_crawl, args=(path, self.current_task.parsed_files,
+                                                                            self.current_task.done,
+                                                                            self.current_task.task.dir_id))
+            self.current_process.start()
 
-        self.current_process = Process(target=self.execute_crawl, args=(path, self.current_task.parsed_files, self.current_task.done))
-        # self.current_process.daemon = True
-        self.current_process.start()
+        elif task.type == Task.GEN_THUMBNAIL:
+            self.current_process = Process(target=self.execute_thumbnails, args=(self.current_task.task.dir_id,
+                                                                                 self.current_task.total_files,
+                                                                                 self.current_task.parsed_files,
+                                                                                 self.current_task.done))
+            self.current_process.start()
 
-    def execute_crawl(self, path: str, counter: Value, done: Value):
+    def execute_crawl(self, path: str, counter: Value, done: Value, directory: int):
         c = Crawler([GenericFileParser([Md5CheckSumCalculator()], ExtensionMimeGuesser())])
         c.crawl(path, counter)
 
-        Indexer("changeme").index(c.documents)
+        Indexer("changeme").index(c.documents, directory)
+        done.value = 1
 
-        print("Done")
+    def execute_thumbnails(self, dir_id: int, total_files: Value, counter: Value, done: Value):
+
+        docs = list(Search("changeme").getAllDocuments(dir_id))
+
+        total_files.value = len(docs)
+
         done.value = 1
 
     def cancel_task(self):

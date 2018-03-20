@@ -30,7 +30,7 @@ class Indexer:
         subprocess.Popen(["elasticsearch/bin/elasticsearch"])
 
     @staticmethod
-    def create_bulk_index_string(docs: list):
+    def create_bulk_index_string(docs: list, directory: int):
         """
         Creates a insert string for sending to elasticsearch
         """
@@ -42,6 +42,7 @@ class Indexer:
         action_string = '{"index":{}}\n'
 
         for doc in docs:
+            doc["directory"] = directory
             result += action_string
             result += json.dumps(doc) + "\n"
 
@@ -49,11 +50,11 @@ class Indexer:
 
         return result
 
-    def index(self, docs: list):
+    def index(self, docs: list, directory: int):
         print("Indexing " + str(len(docs)) + " docs")
-        index_string = Indexer.create_bulk_index_string(docs)
+        index_string = Indexer.create_bulk_index_string(docs, directory)
         print("bulk-start")
-        self.es.bulk(body=index_string, index=self.index_name, doc_type="file")
+        self.es.bulk(body=index_string, index=self.index_name, doc_type="file", refresh="true")
         print("bulk-done")
 
     def clear(self):
@@ -73,7 +74,8 @@ class Indexer:
         self.es.indices.put_mapping(body='{"properties": {'
                                     '"name": {"type": "text", "analyzer": "path_analyser", "copy_to": "suggest-path"},'
                                     '"suggest-path": {"type": "completion", "analyzer": "keyword"},'
-                                    '"mime": {"type": "keyword"}'
+                                    '"mime": {"type": "keyword"},'
+                                    '"directory": {"type": "keyword"}'
                                     '}}', doc_type="file", index=self.index_name)
 
         self.es.indices.open(index=self.index_name)

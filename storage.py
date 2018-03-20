@@ -58,6 +58,9 @@ class Directory:
 
 class Task:
 
+    INDEX = 1
+    GEN_THUMBNAIL = 2
+
     def __init__(self, task_type: int, dir_id: int, completed: bool = False, completed_time: time.time = None,
                  task_id: int = None):
         self.id = task_id
