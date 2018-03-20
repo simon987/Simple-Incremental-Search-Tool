@@ -6,6 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from parsing import GenericFileParser, Md5CheckSumCalculator, ExtensionMimeGuesser
 from indexer import Indexer
 from search import Search
+from thumbnail import ThumbnailGenerator
 
 
 class RunningTask:
@@ -80,10 +81,10 @@ class TaskManager:
 
         if task.type == Task.INDEX:
             c = Crawler([])
-            path = self.storage.dirs()[task.dir_id].path
-            self.current_task.total_files.value = c.countFiles(path)
+            directory = self.storage.dirs()[task.dir_id]
+            self.current_task.total_files.value = c.countFiles(directory.path)
 
-            self.current_process = Process(target=self.execute_crawl, args=(path, self.current_task.parsed_files,
+            self.current_process = Process(target=self.execute_crawl, args=(directory.path, self.current_task.parsed_files,
                                                                             self.current_task.done,
                                                                             self.current_task.task.dir_id))
             self.current_process.start()
@@ -99,16 +100,24 @@ class TaskManager:
         c = Crawler([GenericFileParser([Md5CheckSumCalculator()], ExtensionMimeGuesser())])
         c.crawl(path, counter)
 
+        # todo: create indexer inside the crawler and index every X files
         Indexer("changeme").index(c.documents, directory)
         done.value = 1
 
     def execute_thumbnails(self, dir_id: int, total_files: Value, counter: Value, done: Value):
 
-        docs = list(Search("changeme").getAllDocuments(dir_id))
+        docs = list(Search("changeme").get_all_documents(dir_id))
+
+        print(docs)  #todo remove
 
         total_files.value = len(docs)
 
+        tn_generator = ThumbnailGenerator(300)  # todo get from config
+
+
+
         done.value = 1
+
 
     def cancel_task(self):
         self.current_task = None

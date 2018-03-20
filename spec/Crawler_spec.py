@@ -12,10 +12,10 @@ class CrawlerTest(TestCase):
 
         c.crawl("test_folder")
 
-        self.assertEqual(len(c.documents), 28)
+        self.assertEqual(len(c.documents), 31)
 
     def test_file_count(self):
 
         c = Crawler([])
 
-        self.assertEqual(c.countFiles("test_folder"), 28)
+        self.assertEqual(c.countFiles("test_folder"), 31)

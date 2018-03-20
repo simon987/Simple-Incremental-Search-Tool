@@ -15,7 +15,7 @@ class Search:
         except:
             print("elasticsearch is not running")
 
-    def getAllDocuments(self, dir_id: int):
+    def get_all_documents(self, dir_id: int):
 
         return helpers.scan(client=self.es,
                             query={"_source": {"includes": ["path", "name"]},

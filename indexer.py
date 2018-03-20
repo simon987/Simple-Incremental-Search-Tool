@@ -53,9 +53,7 @@ class Indexer:
     def index(self, docs: list, directory: int):
         print("Indexing " + str(len(docs)) + " docs")
         index_string = Indexer.create_bulk_index_string(docs, directory)
-        print("bulk-start")
         self.es.bulk(body=index_string, index=self.index_name, doc_type="file", refresh="true")
-        print("bulk-done")
 
     def clear(self):
 

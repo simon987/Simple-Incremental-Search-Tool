@@ -54,6 +54,14 @@ class Directory:
 
     def __str__(self):
         return self.path + " | enabled: " + str(self.enabled) + " | opts: " + str(self.options)
+    
+    def get_option(self, key):
+
+        for option in self.options:
+            if option.key == key:
+                return option.value
+
+        return None
 
 
 class Task:
