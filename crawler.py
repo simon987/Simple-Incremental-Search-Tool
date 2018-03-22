@@ -97,7 +97,7 @@ class TaskManager:
             self.current_process.start()
 
     def execute_crawl(self, path: str, counter: Value, done: Value, directory: int):
-        c = Crawler([GenericFileParser([Md5CheckSumCalculator()], ExtensionMimeGuesser())])
+        c = Crawler([GenericFileParser([], ExtensionMimeGuesser())])
         c.crawl(path, counter)
 
         # todo: create indexer inside the crawler and index every X files
@@ -108,16 +108,12 @@ class TaskManager:
 
         docs = list(Search("changeme").get_all_documents(dir_id))
 
-        print(docs)  #todo remove
-
         total_files.value = len(docs)
 
-        tn_generator = ThumbnailGenerator(300)  # todo get from config
-
-
+        tn_generator = ThumbnailGenerator(275)  # todo get from config
+        tn_generator.generate_all(docs, os.path.join("thumbnails", str(dir_id)), counter)
 
         done.value = 1
-
 
     def cancel_task(self):
         self.current_task = None

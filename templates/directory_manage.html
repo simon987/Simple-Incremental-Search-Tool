@@ -1,4 +1,5 @@
 {%  extends "layout.html" %}
+{% set active_page = "directory" %}
 
 {% block title %}An excellent title{% endblock title %}
 
@@ -38,16 +39,6 @@
             return input;
         }
 
-        function modifyKey(optId, value) {
-
-            swapToForm(document.getElementById("key-" + optId), [
-                {name: "id", value: optId},
-                {name: "value", value: value},
-                {name: "dir_id", value: {{ directory.id }}}
-            ], "/directory/{{ directory.id }}/update_opt", "key");
-
-        }
-
         function modifyVal(optId, key) {
             swapToForm(document.getElementById("val-" + optId), [
                 {name: "id", value: optId},
@@ -77,27 +68,29 @@
 
                 <table class="info-table">
                     <tr onclick="modifyDisplayName()">
-                        <th>Display name</th>
+                        <th style="width: 20%">Display name</th>
                         <td>
-                            <span id="display-name" title="Click to update">{{ directory.name }}</span>
+                            <pre id="display-name" title="Click to update">{{ directory.name }}</pre>
                         </td>
                     </tr>
 
                     <tr onclick="modifyPath()">
-                        <th>Path</th>
+                        <th style="width: 20%">Path</th>
                         <td>
                             <pre id="path" title="Click to update">{{ directory.path }}</pre>
                         </td>
                     </tr>
 
                     <tr>
-                        <th>Enabled</th>
+                        <th style="width: 20%">Enabled</th>
                         <td>
-                            <i class="far {{ "fa-check-square" if directory.enabled else "fa-square" }}"></i>
+
                             <form action="/directory/{{ directory.id }}/update"  style="display: inline;">
                                 <input type="hidden" name="enabled" value="{{ "0" if directory.enabled else "1" }}">
-                                <input type="submit" class="btn {{ "btn-danger" if directory.enabled else "btn-success" }}"
-                                       value="{{ "Disable" if directory.enabled else "Enable" }}">
+                                <button class="btn btn-sm {{ "btn-danger" if directory.enabled else "btn-success" }}">
+                                    <i class="far {{ "fa-check-square" if directory.enabled else "fa-square" }}"></i>
+                                    {{ "Disable" if directory.enabled else "Enable" }}
+                                </button>
                             </form>
                         </td>
                     </tr>
@@ -112,41 +105,22 @@
                 <table class="info-table table-striped table-hover">
                     <thead>
                     <tr>
-                        <th>Key</th>
+                        <th>Option</th>
                         <th>Value</th>
-                        <th>Action</th>
                     </tr>
                     </thead>
                     <tbody>
                     {% for option in directory.options %}
 
                         <tr>
-                            <td style="width: 40%" onclick="modifyKey({{ option.id }}, '{{ option.value }}')" title="Click to update"><span id="key-{{ option.id }}">{{ option.key }}</span></td>
-                            <td style="width: 40%" onclick="modifyVal({{ option.id }}, '{{ option.key }}')" title="Click to update"><span id="val-{{ option.id }}">{{ option.value }}</span></td>
-                            <td><a id="opt-{{ option.id }}-btn" class="btn btn-danger" href="/directory/{{ directory.id }}/del_opt/{{ option.id }}" >Remove</a></td>
+                            <td style="width: 30%"><span>{{ option.key }}</span></td>
+                            <td onclick="modifyVal({{ option.id }}, '{{ option.key }}')" title="Click to update"><span id="val-{{ option.id }}">{{ option.value }}</span></td>
                         </tr>
 
                     {% endfor %}
 
                     </tbody>
                 </table>
-
-                <hr>
-
-                <form method="GET" action="/directory/{{ directory.id }}/add_opt">
-
-                    <div class="form-row">
-                        <div class="col">
-                            <input type="text" class="form-control" placeholder="Key" name="key">
-                        </div>
-
-                        <div class="col">
-                            <input type="text" class="form-control" placeholder="Value" name="value">
-                        </div>
-                        <button type="submit" class="btn btn-success">Add option</button>
-                    </div>
-
-                </form>
 
             </div>
         </div>
@@ -155,22 +129,25 @@
             <div class="card-header">An excellent control panel</div>
             <div class="card-body">
 
-                <div class="dropdown">
-                    <button class="btn dropdown-toggle btn-primary" data-toggle="dropdown">Create a task</button>
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item" href="#">Indexing task</a>
-                        <a class="dropdown-item" href="#">Thumbnail generation task</a>
+                <div class="d-flex">
+                    <div class="dropdown" style="margin-right: 1em;">
+                        <button class="btn dropdown-toggle btn-primary" data-toggle="dropdown">Create a task</button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="#">Indexing task</a>
+                            <a class="dropdown-item" href="#">Thumbnail generation task</a>
+                        </div>
+                    </div>
+
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle btn-danger" data-toggle="dropdown">Action</button>
+
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="/directory/{{ directory.id }}/del">Delete directory</a>
+                            <a class="dropdown-item" href="#">Reset to default settings</a>
+                        </div>
                     </div>
                 </div>
 
-                <div class="dropdown">
-                    <button class="btn dropdown-toggle btn-danger" data-toggle="dropdown" aria-haspopup="true">Action</button>
-
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item" href="/directory/{{ directory.id }}/del">Delete directory</a>
-                        <a class="dropdown-item" href="#">Reset to default settings</a>
-                    </div>
-                </div>
 
             </div>
 

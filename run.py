@@ -1,18 +1,15 @@
-from flask import Flask, render_template, send_file, request, redirect, flash, session
-from indexer import Indexer
+from flask import Flask, render_template, request, redirect, flash, session
 from storage import Directory, Option, Task
 from storage import LocalStorage, DuplicateDirectoryException
 from crawler import RunningTask, TaskManager
 import json
 
-# indexer = Indexer("fse")
-
 app = Flask(__name__)
 app.secret_key = "A very secret key"
 storage = LocalStorage("local_storage.db")
 
+# tm = TaskManager(storage)
 
-tm = TaskManager(storage)
 
 @app.route("/")
 def tmp_route():
@@ -72,26 +69,6 @@ def directory_update(dir_id):
 
     flash("<strong>Updated directory</strong>", "success")
 
-    return redirect("/directory/" + str(dir_id))
-
-
-@app.route("/directory/<int:dir_id>/add_opt")
-def directory_add_opt(dir_id):
-
-    key = request.args.get("key")
-    value = request.args.get("value")
-
-    if key is not None and value is not None:
-        storage.save_option(Option(key, value, dir_id))
-        flash("<strong>Added option</strong>", "success")
-
-    return redirect("/directory/" + str(dir_id))
-
-
-@app.route("/directory/<int:dir_id>/del_opt/<int:opt_id>")
-def directory_del_opt(dir_id, opt_id):
-
-    storage.del_option(opt_id)
     return redirect("/directory/" + str(dir_id))
 
 

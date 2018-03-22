@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% set active_page = "task" %}
 
 {% block title %}An excellent title{% endblock title %}
 
@@ -33,22 +34,26 @@
             color: black;
         }
 
+        .form-inline > * {
+            margin: 0 4px;
+        }
+
     </style>
 
     <div class="container">
 
         <div class="card">
-            <div class="card-header">An excellent form</div>
+            <div class="card-header">Add task</div>
             <div class="card-body">
                 <form class="form-inline" action="/task/add">
-                    <label for="type">Create </label>
-                    <select class="form-control" id="type" name="type" >
+                    <select title="Select task type" class="form-control" id="type" name="type">
+                        <option hidden>Create task...</option>
                         <option value="1">Indexing</option>
                         <option value="2">Thumbnail Generation</option>
                     </select>
 
-                    <label for="directory">task for</label>
-                    <select class="form-control" id="directory" name="directory" >
+                    <select title="Select directory" class="form-control" id="directory" name="directory" >
+                        <option hidden>For directory...</option>
                         {% for dir_id in directories %}
                             <option value="{{ dir_id }}">{{ directories[dir_id].name }}</option>
                         {% endfor %}
@@ -58,8 +63,6 @@
                 </form>
             </div>
         </div>
-
-
 
         <script>
             function updateProgressBar() {
@@ -97,9 +100,8 @@
             window.setInterval(updateProgressBar, 125);
         </script>
 
-
         <div class="card">
-            <div class="card-header">An excellent panel</div>
+            <div class="card-header">Ongoing tasks</div>
             <div class="card-body">
                 {% for task_id in tasks | sort()%}
                     <div class="task-wrapper container-fluid">
@@ -117,10 +119,8 @@
 
                             <div class="p-2"><a class="btn btn-danger" href="/task/{{ task_id }}/del">Cancel</a></div>
                         </div>
-
                     </div>
                 {% endfor %}
-
             </div>
         </div>
 

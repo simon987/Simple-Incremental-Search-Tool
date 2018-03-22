@@ -29,11 +29,11 @@ class ThumbnailGeneratorTest(TestCase):
         generator = ThumbnailGenerator(300)
 
         docs = [{'_source': {'path': 'test_folder', 'name': 'books.csv'}, '_id': 'books.csv-ID'},
-               {'_source': {'path': 'test_folder', 'name': 'sample_3.jpg'}, '_id': 'sample_3.jpg-ID'},
-               {'_source': {'path': 'test_folder', 'name': 'sample_5.png'}, '_id': 'sample_5.png-ID'},
-               {'_source': {'path': 'test_folder', 'name': 'sample_6.gif'}, '_id': 'sample_6.gif-ID'},
-               {'_source': {'path': 'test_folder', 'name': 'sample_7.bmp'}, '_id': 'sample_7.bmp-ID'},
-               {'_source': {'path': 'test_folder', 'name': 'sample_2.jpeg'}, '_id': 'sample_2.jpeg-ID'}]
+                {'_source': {'path': 'test_folder', 'name': 'sample_3.jpg'}, '_id': 'sample_3.jpg-ID'},
+                {'_source': {'path': 'test_folder', 'name': 'sample_5.png'}, '_id': 'sample_5.png-ID'},
+                {'_source': {'path': 'test_folder', 'name': 'sample_6.gif'}, '_id': 'sample_6.gif-ID'},
+                {'_source': {'path': 'test_folder', 'name': 'sample_7.bmp'}, '_id': 'sample_7.bmp-ID'},
+                {'_source': {'path': 'test_folder', 'name': 'sample_2.jpeg'}, '_id': 'sample_2.jpeg-ID'}]
 
         generator.generate_all(docs, "test_thumbnails")
 
