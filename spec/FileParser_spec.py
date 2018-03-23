@@ -16,7 +16,7 @@ class GenericFileParserTest(TestCase):
         test_file.close()
         os.utime("test_parse.txt", (1330123456, 1330654321))
 
-        self.parser = GenericFileParser([Md5CheckSumCalculator()], ExtensionMimeGuesser())
+        self.parser = GenericFileParser([Md5CheckSumCalculator()])
 
     def tearDown(self):
         os.remove("test_parse.txt")
@@ -41,11 +41,6 @@ class GenericFileParserTest(TestCase):
         result = self.parser.parse("test_parse.txt")
 
         self.assertEqual(result["mtime"], 1330654321)
-
-    def test_mime(self):
-
-        result = self.parser.parse("test_parse.txt")
-        self.assertEqual(result["mime"], "text/plain")
 
 
 class Md5CheckSumCalculatorTest(TestCase):

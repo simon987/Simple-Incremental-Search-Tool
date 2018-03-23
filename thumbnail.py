@@ -31,7 +31,8 @@ class ThumbnailGenerator:
                  )
                 self.generate_image("tmp", dest_path)
                 os.remove("tmp")
-            except:
+            except Exception as e:
+                print(e)
                 print("Couldn't make thumbnail for " + path)
 
         # print(dest_path + " - " + str(os.path.getsize(dest_path)))  # debug todo remove

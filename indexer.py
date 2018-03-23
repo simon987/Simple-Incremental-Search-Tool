@@ -35,8 +35,6 @@ class Indexer:
         Creates a insert string for sending to elasticsearch
         """
 
-        print("Creating bulk index string...")
-
         result = ""
 
         action_string = '{"index":{}}\n'
@@ -45,8 +43,6 @@ class Indexer:
             doc["directory"] = directory
             result += action_string
             result += json.dumps(doc) + "\n"
-
-        print(result)
 
         return result
 

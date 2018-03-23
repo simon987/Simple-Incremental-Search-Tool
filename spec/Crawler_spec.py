@@ -8,7 +8,7 @@ class CrawlerTest(TestCase):
 
     def test_dir_walk(self):
 
-        c = Crawler([GenericFileParser([Sha1CheckSumCalculator()], ExtensionMimeGuesser())])
+        c = Crawler([GenericFileParser([Sha1CheckSumCalculator()])])
 
         c.crawl("test_folder")
 

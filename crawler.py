@@ -3,7 +3,7 @@ from storage import Task, LocalStorage
 import json
 from multiprocessing import Process, Value
 from apscheduler.schedulers.background import BackgroundScheduler
-from parsing import GenericFileParser, Md5CheckSumCalculator, ExtensionMimeGuesser
+from parsing import GenericFileParser, Md5CheckSumCalculator, ExtensionMimeGuesser, MediaFileParser, TextFileParser
 from indexer import Indexer
 from search import Search
 from thumbnail import ThumbnailGenerator
@@ -34,17 +34,21 @@ class Crawler:
         self.ext_map = {}
 
         for parser in self.enabled_parsers:
-            for ext in parser.extensions:
+            for ext in parser.mime_types:
                 self.ext_map[ext] = parser
 
     def crawl(self, root_dir: str, counter: Value=None):
+
+        mime_guesser = ExtensionMimeGuesser()  #todo config
 
         for root, dirs, files in os.walk(root_dir):
 
             for filename in files:
                 full_path = os.path.join(root, filename)
 
-                parser = self.ext_map.get(os.path.splitext(filename)[1], self.default_parser)
+                mime = mime_guesser.guess_mime(full_path)
+
+                parser = self.ext_map.get(mime, self.default_parser)
 
                 try:
                     if counter:
@@ -97,7 +101,7 @@ class TaskManager:
             self.current_process.start()
 
     def execute_crawl(self, path: str, counter: Value, done: Value, directory: int):
-        c = Crawler([GenericFileParser([], ExtensionMimeGuesser())])
+        c = Crawler([GenericFileParser([]), MediaFileParser([]), TextFileParser([], 1024)])
         c.crawl(path, counter)
 
         # todo: create indexer inside the crawler and index every X files

@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.secret_key = "A very secret key"
 storage = LocalStorage("local_storage.db")
 
-# tm = TaskManager(storage)
+tm = TaskManager(storage)
 
 
 @app.route("/")
@@ -32,6 +32,7 @@ def directory_add():
         d = Directory(path, True, [], name)
 
         try:
+            d.set_default_options()
             storage.save_directory(d)
             flash("<strong>Created directory</strong>", "success")
         except DuplicateDirectoryException:

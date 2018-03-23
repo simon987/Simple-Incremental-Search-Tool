@@ -114,7 +114,7 @@
 
                         <tr>
                             <td style="width: 30%"><span>{{ option.key }}</span></td>
-                            <td onclick="modifyVal({{ option.id }}, '{{ option.key }}')" title="Click to update"><span id="val-{{ option.id }}">{{ option.value }}</span></td>
+                            <td onclick="modifyVal({{ option.id }}, '{{ option.key }}')" title="Click to update"><pre id="val-{{ option.id }}">{{ option.value }}</pre></td>
                         </tr>
 
                     {% endfor %}

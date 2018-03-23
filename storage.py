@@ -2,6 +2,7 @@ import sqlite3
 import os
 import flask_bcrypt
 import time
+import config
 
 
 class CheckSumCalculator:
@@ -62,6 +63,13 @@ class Directory:
                 return option.value
 
         return None
+
+    def set_default_options(self):
+
+        self.options = []
+
+        for option in config.default_options:
+            self.options.append(Option(option, config.default_options[option]))
 
 
 class Task:
