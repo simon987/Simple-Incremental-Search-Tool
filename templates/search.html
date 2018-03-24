@@ -1,0 +1,364 @@
+{% extends "layout.html" %}
+
+{% set active_page = "search" %}
+
+{% block title %}Search{% endblock title %}
+
+{% block body %}
+
+    <style>
+        .document {
+            padding: 0.5rem;
+        }
+
+        .document:hover {
+            text-decoration: underline;
+        }
+
+        .card-columns {
+            column-count: 4;
+        }
+
+        .badge-video {
+            color: #ffffff;
+            background-color: #F27761;
+        }
+
+        .badge-image {
+            color: #ffffff;
+            background-color: #AA99C9;
+        }
+
+        .badge-resolution {
+            color: #212529;
+            background-color: #ffc107;
+        }
+
+        .card-img-overlay {
+            pointer-events: none;
+            padding: 0.75rem;
+
+            bottom: 0;
+            top: unset;
+            left: unset;
+            right: unset;
+        }
+
+        .file-title {
+            font-size: 10pt;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        .badge {
+            margin-right: 3px;
+        }
+
+        .fit {
+            width: 100%;
+            height: 100%;
+        }
+
+    </style>
+
+    <div class="container">
+
+        <div class="card">
+            {#            <div class="card-header">An excellent form</div>#}
+            <div class="card-body">
+                <form action=""></form>
+                <input id="searchBar" type="search" class="form-control" placeholder="Search">
+            </div>
+        </div>
+
+        <div id="searchResults">
+
+        </div>
+
+        <script>
+
+            var searchBar = document.getElementById("searchBar");
+            var scroll_id = null;
+            var coolingDown = false;
+            var docCount = 0;
+
+            searchBar.addEventListener("keydown", function () {
+
+                var query = searchBar.value;
+
+                console.log("query: " + query);
+
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState === 4 && this.status === 200) {
+
+                        var searchResult = JSON.parse(this.responseText);
+
+                        scroll_id = searchResult["_scroll_id"];
+
+                        var resultContainer = document.createElement("div");
+                        resultContainer.setAttribute("class", "card-columns");
+                        document.getElementById("searchResults").appendChild(resultContainer);
+
+                        for (var i = 0 ; i < searchResult["hits"]["hits"].length; i++) {
+
+                            var hit = searchResult["hits"]["hits"][i];
+                            resultContainer.appendChild(createDocCard(hit));
+                            docCount++;
+                        }
+                    }
+                };
+                xhttp.open("GET", "/search", true);
+                xhttp.send();
+
+            });
+
+            function createDocCard(hit) {
+
+                var doc = document.createElement("div");
+                doc.setAttribute("class", "card");
+
+                var docBody = document.createElement("div");
+                docBody.setAttribute("class", "card-body document");
+
+                var link = document.createElement("a");
+                link.setAttribute("href", "/document/" + hit["_id"]);
+
+                var title = document.createElement("p");
+                title.setAttribute("class", "file-title");
+                title.appendChild(document.createTextNode(hit["_source"]["name"]));
+                title.setAttribute("title", hit["_source"]["name"]);
+                doc.appendChild(title);
+
+                var tagContainer = document.createElement("div");
+                tagContainer.setAttribute("class", "card-text");
+
+                if (hit["_source"].hasOwnProperty("mime")) {
+
+                    var tags = [];
+                    var thumbnail = null;
+                    var thumbnailOverlay = null;
+                    var imgWrapper = document.createElement("div");
+                    imgWrapper.setAttribute("style", "position: relative");
+
+                    var mimeCategory = hit["_source"]["mime"].split("/")[0];
+
+                    //Thumbnail
+                    switch (mimeCategory) {
+
+                        case "video":
+                        case "image":
+                            thumbnail = document.createElement("img");
+                            thumbnail.setAttribute("class", "card-img-top");
+                            thumbnail.setAttribute("src", "/thumb/" + hit["_source"]["directory"] + "/" + hit["_id"]);
+
+                            break;
+
+                    }
+
+                    //Thumbnail overlay
+                    switch (mimeCategory) {
+
+                        case "image":
+                            thumbnailOverlay = document.createElement("div");
+                            thumbnailOverlay.setAttribute("class", "card-img-overlay");
+
+                            //Resolution
+                            var resolutionBadge = document.createElement("span");
+                            resolutionBadge.setAttribute("class", "badge badge-resolution");
+                            resolutionBadge.appendChild(document.createTextNode(hit["_source"]["width"] + "x" + hit["_source"]["height"]));
+                            thumbnailOverlay.appendChild(resolutionBadge);
+
+                            var format = hit["_source"]["format"];
+
+                            //Hover
+                            if(format === "GIF") {
+                                thumbnail.addEventListener("mouseover", function () {
+
+                                    var self = this;
+                                    this.mouseStayedOver = true;
+
+                                    window.setTimeout(function() {
+                                        if (self.mouseStayedOver) {
+                                            thumbnail.removeEventListener('mouseover', arguments.callee, false);
+
+                                            thumbnail.setAttribute("style", "display: none");
+
+                                            var gifImage = document.createElement("img");
+                                            gifImage.setAttribute("src", "/file/" + hit["_id"]);
+                                            gifImage.setAttribute("class", "fit");
+                                            imgWrapper.appendChild(gifImage);
+
+                                            gifImage.addEventListener("mouseout", function() {
+                                                gifImage.setAttribute("style", "display: none");
+                                                thumbnail.setAttribute("style", "");
+                                            });
+                                            thumbnail.addEventListener("mouseover", function () {
+                                                gifImage.setAttribute("style", "");
+                                                thumbnail.setAttribute("style", "display: none");
+                                            });
+                                        }
+                                    }, 750);
+
+
+                                });
+                                thumbnail.addEventListener("mouseout", function() {
+                                    this.mouseStayedOver = false;
+                                })
+                            }
+
+
+
+                            break;
+                        case "video":
+                            thumbnailOverlay = document.createElement("div");
+                            thumbnailOverlay.setAttribute("class", "card-img-overlay");
+
+                            //Duration
+                            var durationBadge = document.createElement("span");
+                            durationBadge.setAttribute("class", "badge badge-resolution");
+                            durationBadge.appendChild(document.createTextNode(parseFloat(hit["_source"]["duration"]).toFixed(2) + "s"));
+                            thumbnailOverlay.appendChild(durationBadge);
+
+
+                            thumbnail.addEventListener("mouseover", function () {
+
+                                var self = this;
+                                this.mouseStayedOver = true;
+
+                                window.setTimeout(function() {
+                                    if(self.mouseStayedOver) {
+                                        imgWrapper.removeChild(thumbnail);
+                                        imgWrapper.removeChild(thumbnailOverlay);
+
+                                        var video = document.createElement("video");
+                                        var vidSource = document.createElement("source");
+                                        vidSource.setAttribute("src", "/file/" + hit["_id"]);
+                                        vidSource.setAttribute("type", "video/webm");
+                                        video.appendChild(vidSource);
+                                        video.setAttribute("class", "fit");
+                                        imgWrapper.appendChild(video);
+
+                                        //Video hover
+                                        video.addEventListener("mouseover", function() {
+                                            var isPlaying = video.currentTime > 0 && !video.paused && !video.ended && video.readyState > 2;
+
+                                            if (!isPlaying) {
+                                                video.play();
+                                            }
+                                        });
+
+                                        video.addEventListener("mouseout", function() {
+                                            video.currentTime = 0;
+                                            video.pause();
+                                        });
+
+                                        video.addEventListener("dblclick", function() {
+                                            video.webkitRequestFullScreen();
+                                        })
+                                    }
+                                }, 750);
+                            });
+                            thumbnail.addEventListener("mouseout", function() {
+                                this.mouseStayedOver = false;
+                            });
+
+                    }
+
+                    //Tags
+                    switch (mimeCategory) {
+
+                        case "video":
+                            var videoTag = document.createElement("span");
+                            videoTag.setAttribute("class", "badge badge-pill badge-video");
+                            videoTag.appendChild(document.createTextNode("video"));
+                            tags.push(videoTag);
+
+                            var formatTag = document.createElement("span");
+                            formatTag.setAttribute("class", "badge badge-pill badge-secondary");
+                            formatTag.appendChild(document.createTextNode(hit["_source"]["format_long_name"]));
+                            tags.push(formatTag);
+
+                            break;
+                        case "image":
+                            var imgTag = document.createElement("span");
+                            imgTag.setAttribute("class", "badge badge-pill badge-image");
+                            imgTag.appendChild(document.createTextNode("image"));
+                            tags.push(imgTag);
+
+                            formatTag = document.createElement("span");
+                            formatTag.setAttribute("class", "badge badge-pill badge-secondary");
+                            formatTag.appendChild(document.createTextNode(format));
+                            tags.push(formatTag);
+
+                            break;
+                    }
+
+                    for (var i = 0; i < tags.length; i++) {
+                        tagContainer.appendChild(tags[i]);
+                    }
+                    if (thumbnail !== null) {
+                        imgWrapper.appendChild(thumbnail);
+                        doc.appendChild(imgWrapper);
+
+                    }
+                    if (thumbnailOverlay !== null) {
+                        imgWrapper.appendChild(thumbnailOverlay);
+                    }
+                }
+
+                docBody.appendChild(link);
+                doc.appendChild(docBody);
+                link.appendChild(title);
+                link.appendChild(tagContainer);
+
+                return doc;
+            }
+
+            window.addEventListener("scroll", function () {
+
+                if (!coolingDown) {
+                    var threshold = 200;
+
+                    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - threshold) {
+                        //load next page
+
+                        var xhttp = new XMLHttpRequest();
+                        xhttp.onreadystatechange = function() {
+                            if (this.readyState === 4 && this.status === 200) {
+
+                                var searchResult = JSON.parse(this.responseText);
+
+                                var pageIndicator = document.createElement("div");
+                                pageIndicator.appendChild(document.createTextNode(docCount + " / " +searchResult["hits"]["total"]));
+                                document.getElementById("searchResults").appendChild(pageIndicator);
+
+                                var resultContainer = document.createElement("div");
+                                resultContainer.setAttribute("class", "card-columns");
+                                document.getElementById("searchResults").appendChild(resultContainer);
+
+                                for (var i = 0 ; i < searchResult["hits"]["hits"].length; i++) {
+
+                                    var hit = searchResult["hits"]["hits"][i];
+                                    resultContainer.appendChild(createDocCard(hit));
+                                    docCount++;
+                                }
+
+                                if(searchResult["hits"]["hits"].length !== 0) {
+                                    coolingDown = false;
+                                }
+                            }
+                        };
+                        xhttp.open("GET", "/scroll?scroll_id=" + scroll_id, true);
+                        xhttp.send();
+                        coolingDown = true;
+                    }
+                }
+            })
+
+        </script>
+    </div>
+
+
+{% endblock body %}

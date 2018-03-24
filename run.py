@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, flash, session
+from flask import Flask, render_template, request, redirect, flash, session, abort, send_file
 from storage import Directory, Option, Task
 from storage import LocalStorage, DuplicateDirectoryException
 from crawler import RunningTask, TaskManager
@@ -28,9 +28,60 @@ def get_dir_size(path):
     return size
 
 
+@app.route("/document/<doc_id>")
+def document(doc_id):
+
+    doc = search.get_doc(doc_id)["_source"]
+    directory = storage.dirs()[doc["directory"]]
+
+    del doc["directory"]
+
+    return render_template("document.html", doc=doc, directory=directory, doc_id=doc_id)
+
+
+@app.route("/file/<doc_id>")
+def file(doc_id):
+
+    doc = search.get_doc(doc_id)["_source"]
+    directory = storage.dirs()[doc["directory"]]
+
+    full_path = os.path.join(directory.path, doc["path"], doc["name"])
+
+    return send_file(full_path)
+
+
+@app.route("/thumb/<int:dir_id>/<doc_id>")
+def thumb(dir_id, doc_id):
+
+    if dir_id in storage.dirs():
+
+        return app.send_static_file(os.path.join("thumbnails/", str(dir_id), doc_id))
+
+    else:
+        abort(404)
+
+
 @app.route("/")
-def tmp_route():
-    return "huh"
+def search_page():
+    return render_template("search.html")
+
+
+@app.route("/search")
+def search_route():
+
+    page = search.search()
+
+    return json.dumps(page)
+
+
+@app.route("/scroll")
+def scroll_route():
+
+    scroll_id = request.args.get("scroll_id")
+
+    page = search.scroll(scroll_id)
+
+    return json.dumps(page)
 
 
 @app.route("/directory")

@@ -132,8 +132,9 @@ class TaskManager:
 
     def execute_thumbnails(self, directory: Directory, total_files: Value, counter: Value, done: Value):
 
-        dest_path = os.path.join("thumbnails", str(directory.id))
-        shutil.rmtree(dest_path)
+        dest_path = os.path.join("static/thumbnails", str(directory.id))
+        if os.path.exists(dest_path):
+            shutil.rmtree(dest_path)
 
         docs = list(Search("changeme").get_all_documents(directory.id))
 

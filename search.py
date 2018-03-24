@@ -16,6 +16,8 @@ class Search:
         except:
             print("elasticsearch is not running")
 
+        self.search_iterator = None
+
     def get_all_documents(self, dir_id: int):
 
         return helpers.scan(client=self.es,
@@ -47,3 +49,19 @@ class Search:
                 return int(parsed_info["indices"][self.index_name]["primaries"]["indexing"]["index_total"])
         except:
             return 0
+
+    def search(self):
+        page = self.es.search(body={"query": {"term": {"directory": 1}}, "size": 30},
+                              index=self.index_name, scroll="3m")
+
+        return page
+
+    def scroll(self, scroll_id):
+
+        page = self.es.scroll(scroll_id=scroll_id, scroll="3m")
+
+        return page
+
+    def get_doc(self, doc_id):
+
+        return self.es.get(index=self.index_name, id=doc_id, doc_type="file")
