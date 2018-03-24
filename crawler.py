@@ -3,10 +3,13 @@ from storage import Task, LocalStorage
 import json
 from multiprocessing import Process, Value
 from apscheduler.schedulers.background import BackgroundScheduler
-from parsing import GenericFileParser, Md5CheckSumCalculator, ExtensionMimeGuesser, MediaFileParser, TextFileParser
+from parsing import GenericFileParser, Md5CheckSumCalculator, ExtensionMimeGuesser, MediaFileParser, TextFileParser, \
+    PictureFileParser, Sha1CheckSumCalculator, Sha256CheckSumCalculator, ContentMimeGuesser, MimeGuesser
 from indexer import Indexer
 from search import Search
 from thumbnail import ThumbnailGenerator
+from storage import Directory
+import shutil
 
 
 class RunningTask:
@@ -23,7 +26,7 @@ class RunningTask:
 
 class Crawler:
 
-    def __init__(self, enabled_parsers: list):
+    def __init__(self, enabled_parsers: list, mime_guesser: MimeGuesser=ContentMimeGuesser()):
         self.documents = []
         self.enabled_parsers = enabled_parsers
 
@@ -37,16 +40,16 @@ class Crawler:
             for ext in parser.mime_types:
                 self.ext_map[ext] = parser
 
-    def crawl(self, root_dir: str, counter: Value=None):
+        self.mime_guesser = mime_guesser
 
-        mime_guesser = ExtensionMimeGuesser()  #todo config
+    def crawl(self, root_dir: str, counter: Value=None):
 
         for root, dirs, files in os.walk(root_dir):
 
             for filename in files:
                 full_path = os.path.join(root, filename)
 
-                mime = mime_guesser.guess_mime(full_path)
+                mime = self.mime_guesser.guess_mime(full_path)
 
                 parser = self.ext_map.get(mime, self.default_parser)
 
@@ -55,6 +58,7 @@ class Crawler:
                         counter.value += 1
 
                     doc = parser.parse(full_path)
+                    doc["mime"] = mime
 
                     self.documents.append(doc)
                 except FileNotFoundError:
@@ -83,39 +87,62 @@ class TaskManager:
     def start_task(self, task: Task):
         self.current_task = RunningTask(task)
 
+        directory = self.storage.dirs()[task.dir_id]
+
         if task.type == Task.INDEX:
             c = Crawler([])
-            directory = self.storage.dirs()[task.dir_id]
             self.current_task.total_files.value = c.countFiles(directory.path)
 
-            self.current_process = Process(target=self.execute_crawl, args=(directory.path, self.current_task.parsed_files,
-                                                                            self.current_task.done,
-                                                                            self.current_task.task.dir_id))
-            self.current_process.start()
+            self.current_process = Process(target=self.execute_crawl, args=(directory, self.current_task.parsed_files,
+                                                                            self.current_task.done))
 
         elif task.type == Task.GEN_THUMBNAIL:
-            self.current_process = Process(target=self.execute_thumbnails, args=(self.current_task.task.dir_id,
+            self.current_process = Process(target=self.execute_thumbnails, args=(directory,
                                                                                  self.current_task.total_files,
                                                                                  self.current_task.parsed_files,
                                                                                  self.current_task.done))
-            self.current_process.start()
+        self.current_process.start()
 
-    def execute_crawl(self, path: str, counter: Value, done: Value, directory: int):
-        c = Crawler([GenericFileParser([]), MediaFileParser([]), TextFileParser([], 1024)])
-        c.crawl(path, counter)
+    def execute_crawl(self, directory: Directory, counter: Value, done: Value):
+
+        chksum_calcs = []
+
+        for arg in directory.get_option("CheckSumCalculators").split(","):
+
+            if arg.strip() == "md5":
+                chksum_calcs.append(Md5CheckSumCalculator())
+            elif arg.strip() == "sha1":
+                chksum_calcs.append(Sha1CheckSumCalculator())
+            elif arg.strip() == "sha256":
+                chksum_calcs.append(Sha256CheckSumCalculator())
+
+        mime_guesser = ExtensionMimeGuesser() if directory.get_option("MimeGuesser") == "extension" \
+            else ContentMimeGuesser()
+
+        c = Crawler([GenericFileParser(chksum_calcs),
+                     MediaFileParser(chksum_calcs),
+                     TextFileParser(chksum_calcs, int(directory.get_option("TextFileContentLenght"))),
+                     PictureFileParser(chksum_calcs)],
+                    mime_guesser)
+        c.crawl(directory.path, counter)
 
         # todo: create indexer inside the crawler and index every X files
-        Indexer("changeme").index(c.documents, directory)
+        Indexer("changeme").index(c.documents, directory.id)
         done.value = 1
 
-    def execute_thumbnails(self, dir_id: int, total_files: Value, counter: Value, done: Value):
+    def execute_thumbnails(self, directory: Directory, total_files: Value, counter: Value, done: Value):
 
-        docs = list(Search("changeme").get_all_documents(dir_id))
+        dest_path = os.path.join("thumbnails", str(directory.id))
+        shutil.rmtree(dest_path)
+
+        docs = list(Search("changeme").get_all_documents(directory.id))
 
         total_files.value = len(docs)
 
-        tn_generator = ThumbnailGenerator(275)  # todo get from config
-        tn_generator.generate_all(docs, os.path.join("thumbnails", str(dir_id)), counter)
+        tn_generator = ThumbnailGenerator(int(directory.get_option("ThumbnailSize")),
+                                          int(directory.get_option("ThumbnailQuality")),
+                                          directory.get_option("ThumbnailColor"))
+        tn_generator.generate_all(docs, dest_path, counter)
 
         done.value = 1
 

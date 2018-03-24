@@ -7,7 +7,6 @@ import json
 import chardet
 from PIL import Image
 
-
 class MimeGuesser:
 
     def guess_mime(self, full_path):
@@ -130,7 +129,7 @@ class GenericFileParser(FileParser):
         path, name = os.path.split(full_path)
 
         info["size"] = file_stat.st_size
-        info["path"] = path
+        info["path"] = path  # todo save relative path
         info["name"] = name
         info["mtime"] = file_stat.st_mtime
 

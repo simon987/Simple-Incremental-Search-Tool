@@ -8,3 +8,5 @@ apscheduler
 ffmpeg-python
 fonttools
 chardet
+exifread
+humanfriendly

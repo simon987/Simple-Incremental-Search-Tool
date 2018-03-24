@@ -7,9 +7,11 @@ import ffmpeg
 
 class ThumbnailGenerator:
 
-    def __init__(self, size):
+    def __init__(self, size, quality=85, color="FF00FF"):
         self.size = (size, size)
         self.mime_guesser = ContentMimeGuesser()
+        self.quality = quality
+        self.color = tuple(bytes.fromhex(color))
 
     def generate(self, path, dest_path):
 
@@ -32,10 +34,7 @@ class ThumbnailGenerator:
                 self.generate_image("tmp", dest_path)
                 os.remove("tmp")
             except Exception as e:
-                print(e)
                 print("Couldn't make thumbnail for " + path)
-
-        # print(dest_path + " - " + str(os.path.getsize(dest_path)))  # debug todo remove
 
     def generate_all(self, docs, dest_path, counter: Value=None):
 
@@ -56,8 +55,7 @@ class ThumbnailGenerator:
             with Image.open(image_file) as image:
 
                 image.thumbnail(self.size, Image.BICUBIC)
-
-                canvas = Image.new("RGB", image.size, (255, 0, 255))  # todo get from config
+                canvas = Image.new("RGB", image.size, self.color)
 
                 if image.mode in ('RGBA', 'LA') or (image.mode == 'P' and 'transparency' in image.info):
 
@@ -68,6 +66,6 @@ class ThumbnailGenerator:
                 else:
                     canvas.paste(image)
 
-                canvas.save(dest_path, "JPEG", quality=85, optimize=True)  # todo get qual from config
+                canvas.save(dest_path, "JPEG", quality=self.quality, optimize=True)
                 canvas.close()
 

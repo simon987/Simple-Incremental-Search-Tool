@@ -75,7 +75,7 @@
                     </tr>
 
                     <tr onclick="modifyPath()">
-                        <th style="width: 20%">Path</th>
+                        <th style="width: 20%">Path</th>Task
                         <td>
                             <pre id="path" title="Click to update">{{ directory.path }}</pre>
                         </td>
@@ -84,8 +84,7 @@
                     <tr>
                         <th style="width: 20%">Enabled</th>
                         <td>
-
-                            <form action="/directory/{{ directory.id }}/update"  style="display: inline;">
+                            <form action="/directory/{{ directory.id }}/update"  style="display: inline;margin-left: 6px;">
                                 <input type="hidden" name="enabled" value="{{ "0" if directory.enabled else "1" }}">
                                 <button class="btn btn-sm {{ "btn-danger" if directory.enabled else "btn-success" }}">
                                     <i class="far {{ "fa-check-square" if directory.enabled else "fa-square" }}"></i>
@@ -93,6 +92,21 @@
                                 </button>
                             </form>
                         </td>
+                    </tr>
+
+                    <tr>
+                        <th>Thumbnail cache size</th>
+                        <td><pre>{{ tn_size_formatted }} ({{ tn_size }} bytes)</pre></td>
+                    </tr>
+
+                    <tr>
+                        <th>Index size</th>
+                        <td><pre>{{ index_size_formatted }} ({{ index_size }} bytes)</pre></td>
+                    </tr>
+
+                    <tr>
+                        <th>Document count</th>
+                        <td><pre>{{ doc_count }}</pre></td>
                     </tr>
                 </table>
             </div>
@@ -130,27 +144,35 @@
             <div class="card-body">
 
                 <div class="d-flex">
-                    <div class="dropdown" style="margin-right: 1em;">
-                        <button class="btn dropdown-toggle btn-primary" data-toggle="dropdown">Create a task</button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="#">Indexing task</a>
-                            <a class="dropdown-item" href="#">Thumbnail generation task</a>
-                        </div>
-                    </div>
 
-                    <div class="dropdown">
+                    <form action="/task/add" class="p-2">
+                        <input type="hidden" value="1" name="type">
+                        <input type="hidden" value="{{ directory.id }}" name="directory">
+                        <button class="btn btn-primary" href="/task/" value="Generate thumbnails">
+                            <i class="fas fa-book"></i> Generate index
+                        </button>
+                    </form>
+
+                    <form action="/task/add" class="p-2">
+                        <input type="hidden" value="2" name="type">
+                        <input type="hidden" value="{{ directory.id }}" name="directory">
+                        <button class="btn btn-primary" href="/task/" value="Generate thumbnails">
+                            <i class="far fa-images"></i> Generate thumbnails
+                        </button>
+                    </form>
+
+                    <div class="dropdown p-2">
                         <button class="btn dropdown-toggle btn-danger" data-toggle="dropdown">Action</button>
 
                         <div class="dropdown-menu">
                             <a class="dropdown-item" href="/directory/{{ directory.id }}/del">Delete directory</a>
-                            <a class="dropdown-item" href="#">Reset to default settings</a>
+                            <a class="dropdown-item" href="/directory/{{ directory.id }}/reset">Reset to default settings</a>
                         </div>
                     </div>
                 </div>
 
 
             </div>
-
         </div>
     </div>
 

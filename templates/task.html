@@ -59,7 +59,7 @@
                         {% endfor %}
                     </select>
 
-                    <input type="submit" class="form-control btn btn-success" value="Add">
+                    <button class="form-control btn btn-success"><i class="fas fa-plus"></i> Add</button>
                 </form>
             </div>
         </div>
@@ -103,10 +103,10 @@
         <div class="card">
             <div class="card-header">Ongoing tasks</div>
             <div class="card-body">
-                {% for task_id in tasks | sort()%}
+                {% for task_id in tasks | sort() %}
                     <div class="task-wrapper container-fluid">
-                        <span class="task-name">{{ directories[tasks[task_id].dir_id].name }} - </span>
-                        <span class="task-info">{{ tasks[task_id].type }}</span>
+                        <a class="task-name" href="/directory/{{ tasks[task_id].dir_id }}">{{ directories[tasks[task_id].dir_id].name }}</a>
+                        <span class="task-info"> - {{ tasks[task_id].type }}</span>
 
                         <div class="d-flex p-2">
                             <div class="container-fluid p-2">

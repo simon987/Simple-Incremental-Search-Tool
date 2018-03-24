@@ -3,12 +3,29 @@ from storage import Directory, Option, Task
 from storage import LocalStorage, DuplicateDirectoryException
 from crawler import RunningTask, TaskManager
 import json
+import os
+import humanfriendly
+from search import Search
 
 app = Flask(__name__)
 app.secret_key = "A very secret key"
 storage = LocalStorage("local_storage.db")
 
 tm = TaskManager(storage)
+search = Search("changeme")
+
+
+def get_dir_size(path):
+
+    size = 0
+
+    for root, dirs, files in os.walk(path):
+        for filename in files:
+
+            full_path = os.path.join(root, filename)
+            size += os.path.getsize(full_path)
+
+    return size
 
 
 @app.route("/")
@@ -45,8 +62,15 @@ def directory_add():
 def directory_manage(dir_id):
 
     directory = storage.dirs()[dir_id]
+    tn_size = get_dir_size("thumbnails/" + str(dir_id))
+    tn_size_formatted = humanfriendly.format_size(tn_size)
 
-    return render_template("directory_manage.html", directory=directory)
+    index_size = search.get_index_size()
+    index_size_formatted = humanfriendly.format_size(index_size)
+
+    return render_template("directory_manage.html", directory=directory, tn_size=tn_size,
+                           tn_size_formatted=tn_size_formatted, index_size=index_size,
+                           index_size_formatted=index_size_formatted, doc_count=search.get_doc_count())
 
 
 @app.route("/directory/<int:dir_id>/update")
@@ -94,11 +118,24 @@ def directory_del(dir_id):
     return redirect("/directory")
 
 
-for t in storage.tasks():
-    a_task = t
-    break
+@app.route("/directory/<int:dir_id>/reset")
+def directory_reset(dir_id):
+    directory = storage.dirs()[dir_id]
 
-# tm = None
+    for opt in directory.options:
+        storage.del_option(opt.id)
+
+    directory.set_default_options()
+
+    for opt in directory.options:
+        opt.dir_id = dir_id
+        storage.save_option(opt)
+
+    storage.dir_cache_outdated = True
+
+    flash("<strong>Reset directory options to default settings</strong>", "success")
+    return redirect("directory/" + str(dir_id))
+
 
 @app.route("/task")
 def task():
