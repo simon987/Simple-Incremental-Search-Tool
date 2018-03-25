@@ -39,8 +39,19 @@ def document(doc_id):
     return render_template("document.html", doc=doc, directory=directory, doc_id=doc_id)
 
 
-@app.route("/file/<doc_id>")
+@app.route("/dl/<doc_id>")
 def file(doc_id):
+
+    doc = search.get_doc(doc_id)["_source"]
+    directory = storage.dirs()[doc["directory"]]
+
+    full_path = os.path.join(directory.path, doc["path"], doc["name"])
+
+    return send_file(full_path, mimetype=doc["mime"], as_attachment=True, attachment_filename=doc["name"])
+
+
+@app.route("/file/<doc_id>")
+def download(doc_id):
 
     doc = search.get_doc(doc_id)["_source"]
     directory = storage.dirs()[doc["directory"]]
@@ -113,7 +124,7 @@ def directory_add():
 def directory_manage(dir_id):
 
     directory = storage.dirs()[dir_id]
-    tn_size = get_dir_size("thumbnails/" + str(dir_id))
+    tn_size = get_dir_size("static/thumbnails/" + str(dir_id))
     tn_size_formatted = humanfriendly.format_size(tn_size)
 
     index_size = search.get_index_size()
@@ -236,4 +247,4 @@ def dashboard():
 
 
 if __name__ == "__main__":
-    app.run("0.0.0.0", 8080)
+    app.run("0.0.0.0", 8080, threaded=True)

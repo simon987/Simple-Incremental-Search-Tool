@@ -11,12 +11,8 @@
             padding: 0.5rem;
         }
 
-        .document:hover {
+        .document:hover p {
             text-decoration: underline;
-        }
-
-        .card-columns {
-            column-count: 4;
         }
 
         .badge-video {
@@ -60,6 +56,22 @@
             height: 100%;
         }
 
+        @media (min-width: 1200px) {
+            .card-columns {
+                column-count: 4;
+            }
+        }
+
+        @media (min-width: 1500px){
+            .container  {
+                max-width: 1440px;
+            }
+            .card-columns {
+                column-count: 5;
+            }
+        }
+
+
     </style>
 
     <div class="container">
@@ -83,53 +95,181 @@
             var coolingDown = false;
             var docCount = 0;
 
-            searchBar.addEventListener("keydown", function () {
+            function makeStatsCard(searchResult) {
 
-                var query = searchBar.value;
+                var statsCard = document.createElement("div");
+                statsCard.setAttribute("class", "card");
+                var statsCardBody = document.createElement("div");
+                statsCardBody.setAttribute("class", "card-body");
 
-                console.log("query: " + query);
+                var stat = document.createElement("p");
+                stat.appendChild(document.createTextNode(searchResult["hits"]["total"] + " results"));
+                statsCardBody.appendChild(stat);
+                statsCard.appendChild(statsCardBody);
 
-                var xhttp = new XMLHttpRequest();
-                xhttp.onreadystatechange = function() {
-                    if (this.readyState === 4 && this.status === 200) {
+                return statsCard;
+            }
 
-                        var searchResult = JSON.parse(this.responseText);
+            function makeResultContainer() {
+                var resultContainer = document.createElement("div");
+                resultContainer.setAttribute("class", "card-columns");
 
-                        scroll_id = searchResult["_scroll_id"];
+                return resultContainer;
+            }
 
-                        var resultContainer = document.createElement("div");
-                        resultContainer.setAttribute("class", "card-columns");
-                        document.getElementById("searchResults").appendChild(resultContainer);
+            /**
+             * https://stackoverflow.com/questions/10420352
+             */
+            function humanFileSize(bytes) {
 
-                        for (var i = 0 ; i < searchResult["hits"]["hits"].length; i++) {
+                if(bytes === 0) {
+                    return "? B"
+                }
 
-                            var hit = searchResult["hits"]["hits"][i];
-                            resultContainer.appendChild(createDocCard(hit));
-                            docCount++;
+                var thresh = 1000;
+                if(Math.abs(bytes) < thresh) {
+                    return bytes + ' B';
+                }
+                var units = ['kB','MB','GB','TB','PB','EB','ZB','YB'];
+                var u = -1;
+                do {
+                    bytes /= thresh;
+                    ++u;
+                } while(Math.abs(bytes) >= thresh && u < units.length - 1);
+
+                return bytes.toFixed(1) + ' ' + units[u];
+            }
+
+
+            function initPopover() {
+                $('[data-toggle="popover"]').popover({
+                    trigger: "focus",
+                    delay: { "show": 0, "hide": 100 },
+                    placement: "bottom",
+                    html: true
+                });
+            }
+
+            /**
+             * Enable gif loading on hover
+             * @param thumbnail
+             * @param documentId
+             */
+            function gifOver(thumbnail, documentId) {
+
+                thumbnail.addEventListener("mouseover", function () {
+
+                    thumbnail.mouseStayedOver = true;
+
+                    window.setTimeout(function() {
+                        if (thumbnail.mouseStayedOver) {
+                            thumbnail.removeEventListener('mouseover', arguments.callee, false);
+
+                            //Load gif
+                            var gifImage = document.createElement("img");
+                            gifImage.setAttribute("src", "/file/" + documentId);
+                            gifImage.setAttribute("class", "fit");
+                            thumbnail.parentNode.appendChild(gifImage);
+
+                            thumbnail.setAttribute("style", "display: none");
+
+                            //Toggle gif/thumbnail on hover
+                            gifImage.addEventListener("mouseout", function() {
+                                gifImage.setAttribute("style", "display: none");
+                                thumbnail.setAttribute("style", "");
+                            });
+                            thumbnail.addEventListener("mouseover", function () {
+                                gifImage.setAttribute("style", "");
+                                thumbnail.setAttribute("style", "display: none");
+                            });
                         }
-                    }
-                };
-                xhttp.open("GET", "/search", true);
-                xhttp.send();
+                    }, 750); //todo grab hover time from config
 
-            });
+                });
 
+                thumbnail.addEventListener("mouseout", function() {
+                    //Reset timer
+                    thumbnail.mouseStayedOver = false;
+                })
+            }
+
+            function videoOver(thumbnail, imgWrapper, thumbnailOverlay, documentId) {
+
+                thumbnail.addEventListener("mouseover", function () {
+
+                    this.mouseStayedOver = true;
+
+                    window.setTimeout(function() {
+                        if(thumbnail.mouseStayedOver) {
+                            imgWrapper.removeChild(thumbnail);
+                            imgWrapper.removeChild(thumbnailOverlay);
+
+                            var video = document.createElement("video");
+                            var vidSource = document.createElement("source");
+                            vidSource.setAttribute("src", "/file/" + documentId);
+                            vidSource.setAttribute("type", "video/webm");
+                            video.appendChild(vidSource);
+                            video.setAttribute("class", "fit");
+                            imgWrapper.appendChild(video);
+
+                            //Video hover
+                            video.addEventListener("mouseover", function() {
+                                var isPlaying = video.currentTime > 0 && !video.paused && !video.ended && video.readyState > 2;
+
+                                if (!isPlaying) {
+                                    video.play();
+                                }
+                            });
+
+                            video.addEventListener("mouseout", function() {
+                                video.currentTime = 0;
+                                video.pause();
+                            });
+
+                            video.addEventListener("dblclick", function() {
+                                video.webkitRequestFullScreen();
+                            })
+                        }
+                    }, 750);
+                });
+                thumbnail.addEventListener("mouseout", function() {
+                    this.mouseStayedOver = false;
+                });
+            }
+
+            function downloadPopover(element, documentId) {
+                element.setAttribute("data-content",
+                    '<a class="btn btn-sm btn-primary" href="/dl/'+ documentId +'"><i class="fas fa-download"></i> Download</a>' +
+                    '<a class="btn btn-sm btn-success" style="margin-left:3px;" href="/file/'+ documentId + '" target="_blank"><i class="fas fa-eye"></i> View</a>');
+                element.setAttribute("data-toggle", "popover");
+                element.addEventListener("mouseover", function() {
+                    element.focus();
+                });
+            }
+
+            /**
+             *
+             * @param hit
+             * @returns {Element}
+             */
             function createDocCard(hit) {
 
-                var doc = document.createElement("div");
-                doc.setAttribute("class", "card");
+                var docCard = document.createElement("div");
+                docCard.setAttribute("class", "card");
+                docCard.setAttribute("tabindex", "-1");
 
-                var docBody = document.createElement("div");
-                docBody.setAttribute("class", "card-body document");
+                var docCardBody = document.createElement("div");
+                docCardBody.setAttribute("class", "card-body document");
 
                 var link = document.createElement("a");
                 link.setAttribute("href", "/document/" + hit["_id"]);
+                link.setAttribute("target", "_blank");
 
                 var title = document.createElement("p");
                 title.setAttribute("class", "file-title");
                 title.appendChild(document.createTextNode(hit["_source"]["name"]));
                 title.setAttribute("title", hit["_source"]["name"]);
-                doc.appendChild(title);
+                docCard.appendChild(title);
 
                 var tagContainer = document.createElement("div");
                 tagContainer.setAttribute("class", "card-text");
@@ -152,7 +292,6 @@
                             thumbnail = document.createElement("img");
                             thumbnail.setAttribute("class", "card-img-top");
                             thumbnail.setAttribute("src", "/thumb/" + hit["_source"]["directory"] + "/" + hit["_id"]);
-
                             break;
 
                     }
@@ -174,43 +313,10 @@
 
                             //Hover
                             if(format === "GIF") {
-                                thumbnail.addEventListener("mouseover", function () {
-
-                                    var self = this;
-                                    this.mouseStayedOver = true;
-
-                                    window.setTimeout(function() {
-                                        if (self.mouseStayedOver) {
-                                            thumbnail.removeEventListener('mouseover', arguments.callee, false);
-
-                                            thumbnail.setAttribute("style", "display: none");
-
-                                            var gifImage = document.createElement("img");
-                                            gifImage.setAttribute("src", "/file/" + hit["_id"]);
-                                            gifImage.setAttribute("class", "fit");
-                                            imgWrapper.appendChild(gifImage);
-
-                                            gifImage.addEventListener("mouseout", function() {
-                                                gifImage.setAttribute("style", "display: none");
-                                                thumbnail.setAttribute("style", "");
-                                            });
-                                            thumbnail.addEventListener("mouseover", function () {
-                                                gifImage.setAttribute("style", "");
-                                                thumbnail.setAttribute("style", "display: none");
-                                            });
-                                        }
-                                    }, 750);
-
-
-                                });
-                                thumbnail.addEventListener("mouseout", function() {
-                                    this.mouseStayedOver = false;
-                                })
+                                gifOver(thumbnail, hit["_id"]);
                             }
-
-
-
                             break;
+
                         case "video":
                             thumbnailOverlay = document.createElement("div");
                             thumbnailOverlay.setAttribute("class", "card-img-overlay");
@@ -221,48 +327,8 @@
                             durationBadge.appendChild(document.createTextNode(parseFloat(hit["_source"]["duration"]).toFixed(2) + "s"));
                             thumbnailOverlay.appendChild(durationBadge);
 
-
-                            thumbnail.addEventListener("mouseover", function () {
-
-                                var self = this;
-                                this.mouseStayedOver = true;
-
-                                window.setTimeout(function() {
-                                    if(self.mouseStayedOver) {
-                                        imgWrapper.removeChild(thumbnail);
-                                        imgWrapper.removeChild(thumbnailOverlay);
-
-                                        var video = document.createElement("video");
-                                        var vidSource = document.createElement("source");
-                                        vidSource.setAttribute("src", "/file/" + hit["_id"]);
-                                        vidSource.setAttribute("type", "video/webm");
-                                        video.appendChild(vidSource);
-                                        video.setAttribute("class", "fit");
-                                        imgWrapper.appendChild(video);
-
-                                        //Video hover
-                                        video.addEventListener("mouseover", function() {
-                                            var isPlaying = video.currentTime > 0 && !video.paused && !video.ended && video.readyState > 2;
-
-                                            if (!isPlaying) {
-                                                video.play();
-                                            }
-                                        });
-
-                                        video.addEventListener("mouseout", function() {
-                                            video.currentTime = 0;
-                                            video.pause();
-                                        });
-
-                                        video.addEventListener("dblclick", function() {
-                                            video.webkitRequestFullScreen();
-                                        })
-                                    }
-                                }, 750);
-                            });
-                            thumbnail.addEventListener("mouseout", function() {
-                                this.mouseStayedOver = false;
-                            });
+                            //Hover
+                            videoOver(thumbnail, imgWrapper, thumbnailOverlay, hit["_id"])
 
                     }
 
@@ -270,37 +336,35 @@
                     switch (mimeCategory) {
 
                         case "video":
-                            var videoTag = document.createElement("span");
-                            videoTag.setAttribute("class", "badge badge-pill badge-video");
-                            videoTag.appendChild(document.createTextNode("video"));
-                            tags.push(videoTag);
-
                             var formatTag = document.createElement("span");
-                            formatTag.setAttribute("class", "badge badge-pill badge-secondary");
-                            formatTag.appendChild(document.createTextNode(hit["_source"]["format_long_name"]));
+                            formatTag.setAttribute("class", "badge badge-pill badge-video");
+                            formatTag.appendChild(document.createTextNode(hit["_source"]["format_long_name"].replace(" ", "")));
                             tags.push(formatTag);
 
                             break;
                         case "image":
-                            var imgTag = document.createElement("span");
-                            imgTag.setAttribute("class", "badge badge-pill badge-image");
-                            imgTag.appendChild(document.createTextNode("image"));
-                            tags.push(imgTag);
-
                             formatTag = document.createElement("span");
-                            formatTag.setAttribute("class", "badge badge-pill badge-secondary");
+                            formatTag.setAttribute("class", "badge badge-pill badge-image");
                             formatTag.appendChild(document.createTextNode(format));
                             tags.push(formatTag);
 
                             break;
                     }
 
+                    //Size tag
+                    var sizeTag = document.createElement("small");
+                    sizeTag.appendChild(document.createTextNode(humanFileSize(hit["_source"]["size"])));
+                    sizeTag.setAttribute("class", "text-muted");
+
                     for (var i = 0; i < tags.length; i++) {
                         tagContainer.appendChild(tags[i]);
                     }
+
+                    tagContainer.appendChild(sizeTag);
+
                     if (thumbnail !== null) {
                         imgWrapper.appendChild(thumbnail);
-                        doc.appendChild(imgWrapper);
+                        docCard.appendChild(imgWrapper);
 
                     }
                     if (thumbnailOverlay !== null) {
@@ -308,12 +372,29 @@
                     }
                 }
 
-                docBody.appendChild(link);
-                doc.appendChild(docBody);
-                link.appendChild(title);
-                link.appendChild(tagContainer);
+                //Download button
+                downloadPopover(docCard, hit["_id"]);
 
-                return doc;
+                docCardBody.appendChild(link);
+                docCard.appendChild(docCardBody);
+
+                link.appendChild(title);
+                docCardBody.appendChild(tagContainer);
+
+                return docCard;
+            }
+
+            function makePageIndicator(searchResult) {
+                var pageIndicator = document.createElement("div");
+                pageIndicator.appendChild(document.createTextNode(docCount + " / " +searchResult["hits"]["total"]));
+            }
+
+
+            function insertHits(resultContainer, hits) {
+                for (var i = 0 ; i < hits.length; i++) {
+                    resultContainer.appendChild(createDocCard(hits[i]));
+                    docCount++;
+                }
             }
 
             window.addEventListener("scroll", function () {
@@ -329,23 +410,22 @@
                             if (this.readyState === 4 && this.status === 200) {
 
                                 var searchResult = JSON.parse(this.responseText);
+                                var searchResults = document.getElementById("searchResults");
+                                var hits = searchResult["hits"]["hits"];
 
-                                var pageIndicator = document.createElement("div");
-                                pageIndicator.appendChild(document.createTextNode(docCount + " / " +searchResult["hits"]["total"]));
-                                document.getElementById("searchResults").appendChild(pageIndicator);
+                                //Page indicator
+                                var pageIndicator = makePageIndicator(searchResult);
+                                searchResults.appendChild(pageIndicator);
 
-                                var resultContainer = document.createElement("div");
-                                resultContainer.setAttribute("class", "card-columns");
-                                document.getElementById("searchResults").appendChild(resultContainer);
+                                //Result container
+                                var resultContainer = makeResultContainer();
+                                searchResults.appendChild(resultContainer);
 
-                                for (var i = 0 ; i < searchResult["hits"]["hits"].length; i++) {
+                                insertHits(resultContainer, hits);
 
-                                    var hit = searchResult["hits"]["hits"][i];
-                                    resultContainer.appendChild(createDocCard(hit));
-                                    docCount++;
-                                }
+                                initPopover();
 
-                                if(searchResult["hits"]["hits"].length !== 0) {
+                                if(hits.length !== 0) {
                                     coolingDown = false;
                                 }
                             }
@@ -355,8 +435,46 @@
                         coolingDown = true;
                     }
                 }
-            })
+            });
 
+            searchBar.addEventListener("keydown", function () {
+
+                //Clear old search results
+                var searchResults =  document.getElementById("searchResults");
+                while (searchResults.firstChild) {
+                    searchResults.removeChild(searchResults.firstChild);
+                }
+
+
+                var query = searchBar.value;
+
+                console.log("query: " + query);
+
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState === 4 && this.status === 200) {
+
+                        var searchResult = JSON.parse(this.responseText);
+                        scroll_id = searchResult["_scroll_id"];
+
+                        //Search stats
+                        searchResults.appendChild(makeStatsCard(searchResult));
+
+                        //Setup page
+                        var resultContainer = makeResultContainer();
+                        searchResults.appendChild(resultContainer);
+
+                        //Insert search results (hits)
+                        insertHits(resultContainer, searchResult["hits"]["hits"]);
+
+                        //Initialise download/view button popover
+                        initPopover();
+                    }
+                };
+                xhttp.open("GET", "/search", true);
+                xhttp.send();
+
+            });
         </script>
     </div>
 

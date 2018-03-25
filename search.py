@@ -51,7 +51,7 @@ class Search:
             return 0
 
     def search(self):
-        page = self.es.search(body={"query": {"term": {"directory": 1}}, "size": 30},
+        page = self.es.search(body={"query": {"term": {"directory": 1}}, "size": 40},
                               index=self.index_name, scroll="3m")
 
         return page

@@ -10,3 +10,4 @@ fonttools
 chardet
 exifread
 humanfriendly
+Pillow
