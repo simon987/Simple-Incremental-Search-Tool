@@ -6,6 +6,8 @@ import json
 import os
 import humanfriendly
 from search import Search
+from PIL import Image
+from io import BytesIO
 
 app = Flask(__name__)
 app.secret_key = "A very secret key"
@@ -13,6 +15,8 @@ storage = LocalStorage("local_storage.db")
 
 tm = TaskManager(storage)
 search = Search("changeme")
+
+
 
 
 def get_dir_size(path):
@@ -45,7 +49,8 @@ def file(doc_id):
     doc = search.get_doc(doc_id)["_source"]
     directory = storage.dirs()[doc["directory"]]
 
-    full_path = os.path.join(directory.path, doc["path"], doc["name"])
+    extension = "" if doc["extension"] is None or doc["extension"] == "" else "." + doc["extension"]
+    full_path = os.path.join(directory.path, doc["path"], doc["name"] + extension)
 
     return send_file(full_path, mimetype=doc["mime"], as_attachment=True, attachment_filename=doc["name"])
 
@@ -55,32 +60,53 @@ def download(doc_id):
 
     doc = search.get_doc(doc_id)["_source"]
     directory = storage.dirs()[doc["directory"]]
-
-    full_path = os.path.join(directory.path, doc["path"], doc["name"])
+    extension = "" if doc["extension"] is None or doc["extension"] == "" else "." + doc["extension"]
+    full_path = os.path.join(directory.path, doc["path"], doc["name"] + extension)
 
     return send_file(full_path)
 
 
-@app.route("/thumb/<int:dir_id>/<doc_id>")
-def thumb(dir_id, doc_id):
+@app.route("/thumb/<doc_id>")
+def thumb(doc_id):
 
-    if dir_id in storage.dirs():
+    doc = search.get_doc(doc_id)
 
-        return app.send_static_file(os.path.join("thumbnails/", str(dir_id), doc_id))
+    if doc is not None:
+
+        tn_path = os.path.join("static/thumbnails/", str(doc["_source"]["directory"]), doc_id)
+        print(tn_path)
+        if os.path.isfile(tn_path):
+            return send_file(tn_path)
+        else:
+            print("tn not found")
+            default_thumbnail = BytesIO()
+            Image.new("RGB", (255, 128), (0, 0, 0)).save(default_thumbnail, "JPEG")
+            default_thumbnail.seek(0)
+            return send_file(default_thumbnail, "image/jpeg")
 
     else:
-        abort(404)
+        print("doc is none")
+        default_thumbnail = BytesIO()
+        Image.new("RGB", (255, 128), (0, 0, 0)).save(default_thumbnail, "JPEG")
+        default_thumbnail.seek(0)
+        return send_file(default_thumbnail, "image/jpeg")
 
 
 @app.route("/")
 def search_page():
     return render_template("search.html")
 
+@app.route("/list")
+def search_liste_page():
+    return render_template("searchList.html")
+
 
 @app.route("/search")
 def search_route():
 
-    page = search.search()
+    query = request.args.get("q")
+    query = "" if query is None else query
+    page = search.search(query)
 
     return json.dumps(page)
 

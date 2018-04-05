@@ -61,15 +61,17 @@ class Indexer:
         self.es.indices.create(index=self.index_name)
         self.es.indices.close(index=self.index_name)
 
-        self.es.indices.put_settings(body='{"analysis": {"analyzer": {"path_analyser": {'
-                                     '"tokenizer": "path_tokenizer"}}, "tokenizer": {"path_tokenizer": {'
-                                     '"type": "path_hierarchy"}}}}', index=self.index_name)
+        self.es.indices.put_settings(body='{"analysis":{"tokenizer":{"path_tokenizer":{"type":"path_hierarchy"}}}}', index=self.index_name)
+        self.es.indices.put_settings(body='{"analysis":{"tokenizer":{"my_nGram_tokenizer":{"type":"nGram","min_gram":3,"max_gram":4}}}}')
+        self.es.indices.put_settings(body='{"analysis":{"analyzer":{"path_analyser":{"tokenizer":"path_tokenizer"}}}}')
+        self.es.indices.put_settings(body='{"analysis":{"analyzer":{"my_nGram":{"tokenizer":"my_nGram_tokenizer"}}}}')
 
         self.es.indices.put_mapping(body='{"properties": {'
-                                    '"name": {"type": "text", "analyzer": "path_analyser", "copy_to": "suggest-path"},'
+                                    '"path": {"type": "text", "analyzer": "path_analyser", "copy_to": "suggest-path"},'
                                     '"suggest-path": {"type": "completion", "analyzer": "keyword"},'
                                     '"mime": {"type": "keyword"},'
-                                    '"directory": {"type": "keyword"}'
+                                    '"directory": {"type": "keyword"},'
+                                    '"name": {"analyzer": "my_nGram", "type": "text"}'
                                     '}}', doc_type="file", index=self.index_name)
 
         self.es.indices.open(index=self.index_name)

@@ -1,0 +1,348 @@
+{% extends "layout.html" %}
+
+{% set active_page = "search" %}
+
+{% block title %}Search{% endblock title %}
+
+{% block body %}
+
+    <style>
+        .document {
+            padding: 0.5rem;
+        }
+
+        .document p {
+            margin-bottom: 0;
+        }
+
+        .document:hover p {
+            text-decoration: underline;
+        }
+
+        .badge-video {
+            color: #FFFFFF;
+            background-color: #F27761;
+            margin-right: 3px;
+
+        }
+
+        .badge-image {
+            color: #FFFFFF;
+            background-color: #AA99C9;
+            margin-right: 3px;
+
+        }
+
+        .badge-resolution {
+            color: #212529;
+            background-color: #FFC107;
+        }
+
+
+
+        .card-img-top {
+            display: block;
+            min-width: 64px;
+            max-width: 100%;
+            max-height: 256px;
+            width: unset;
+            margin: 0 auto 0;
+            padding: 3px 3px 0 3px;
+        }
+
+        .card-img-overlay {
+            pointer-events: none;
+            padding: 0.75rem;
+
+            bottom: 0;
+            top: unset;
+            left: unset;
+            right: unset;
+        }
+
+        .file-title {
+            font-size: 10pt;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        .badge {
+        }
+
+        .fit {
+            width: 100%;
+            height: 100%;
+            margin-top: 3px;
+            padding: 3px;
+        }
+
+        .icon-thumbnail {
+            width: 32px;
+            height: 32px;
+            margin-top: auto;
+            margin-bottom: auto;
+            margin-right: 1rem;
+        }
+
+        @media (min-width: 1200px) {
+            .card-columns {
+                column-count: 4;
+            }
+        }
+
+        @media (min-width: 1500px) {
+            .container  {
+                max-width: 1440px;
+            }
+            .card-columns {
+                column-count: 5;
+            }
+        }
+
+        .doc-list-title {
+            margin-right: 1em;
+        }
+    </style>
+
+    <div class="container">
+
+        <div class="card">
+            {#            <div class="card-header">An excellent form</div>#}
+            <div class="card-body">
+                <form action=""></form>
+                <input id="searchBar" type="search" class="form-control" placeholder="Search">
+            </div>
+        </div>
+
+        <div id="searchResults">
+
+        </div>
+
+        <script>
+
+            var searchBar = document.getElementById("searchBar");
+            var scroll_id = null;
+            var coolingDown = false;
+            var docCount = 0;
+
+            function createDocItem(hit) {
+
+                var docItem = document.createElement("li");
+                docItem.setAttribute("class", "list-group-item list-group-item-action d-flex");
+
+                //Thumbnail
+                var thumbnail = null;
+
+                if (hit["_source"].hasOwnProperty("mime") && hit["_source"]["mime"] != null) {
+                    var mimeCategory = hit["_source"]["mime"].split("/")[0];
+
+                    switch (mimeCategory) {
+
+                        case "video":
+                        case "image":
+                            thumbnail = document.createElement("img");
+                            thumbnail.setAttribute("class", "icon-thumbnail");
+                            thumbnail.setAttribute("src", "/thumb/" + hit["_id"]);
+                            thumbnail.setAttribute("data-content", '<img src="/thumb/'+ hit["_id"] +  ' ">');
+                            thumbnail.setAttribute("data-toggle", "popover");
+                            docItem.appendChild(thumbnail);
+
+                            break;
+                    }
+                }
+
+                //Text
+                var docText = document.createElement("p");
+                docText.setAttribute("class", "doc-list-title");
+                docText.appendChild(document.createTextNode(hit["_source"]["name"]));
+                docItem.appendChild(docText);
+
+
+                //Tag list
+                var tagContainer = document.createElement("div");
+                var tags = [];
+                switch (mimeCategory) {
+
+                    case "video":
+                        var formatTag = document.createElement("span");
+                        formatTag.setAttribute("class", "badge badge-pill badge-video");
+                        formatTag.appendChild(document.createTextNode(hit["_source"]["format_long_name"].replace(" ", "")));
+                        tags.push(formatTag);
+
+                        break;
+                    case "image":
+                        formatTag = document.createElement("span");
+                        formatTag.setAttribute("class", "badge badge-pill badge-image");
+                        formatTag.appendChild(document.createTextNode(hit["_source"]["format"]));
+                        tags.push(formatTag);
+
+                        break;
+                }
+                for (var i = 0; i < tags.length; i++) {
+                    tagContainer.appendChild(tags[i]);
+                }
+                docItem.appendChild(tagContainer);
+
+                //Download
+                var dlIcon = document.createElement("i");
+                dlIcon.setAttribute("class", "fas fa-download");
+
+                var dlButton = document.createElement("a");
+                dlButton.setAttribute("class", "ml-auto btn btn-primary");
+                dlButton.setAttribute("tabindex", "-1");
+                dlButton.appendChild(dlIcon);
+                dlButton.appendChild(document.createTextNode(" " + humanFileSize(hit["_source"]["size"])));
+                docItem.appendChild(dlButton);
+
+                //View
+                var eyeIcon = document.createElement("i");
+                eyeIcon.setAttribute("class", "fas fa-eye");
+
+                var viewButton = document.createElement("a");
+                viewButton.setAttribute("class", "btn btn-success");
+                viewButton.setAttribute("style", "margin-left: 1em");
+                viewButton.setAttribute("tabindex", "-1");
+                viewButton.appendChild(eyeIcon);
+
+                docItem.appendChild(viewButton);
+
+                return docItem;
+            }
+
+            function makeResultContainer() {
+                var resultContainer = document.createElement("ul");
+                resultContainer.setAttribute("class", "list-group list-group-flush");
+
+                return resultContainer;
+            }
+
+            /**
+             * https://stackoverflow.com/questions/10420352
+             */
+            function humanFileSize(bytes) {
+
+                if(bytes === 0) {
+                    return "? B"
+                }
+
+                var thresh = 1000;
+                if(Math.abs(bytes) < thresh) {
+                    return bytes + ' B';
+                }
+                var units = ['kB','MB','GB','TB','PB','EB','ZB','YB'];
+                var u = -1;
+                do {
+                    bytes /= thresh;
+                    ++u;
+                } while(Math.abs(bytes) >= thresh && u < units.length - 1);
+
+                return bytes.toFixed(1) + ' ' + units[u];
+            }
+
+            function makePageIndicator(searchResult) {
+                var pageIndicator = document.createElement("li");
+                pageIndicator.appendChild(document.createTextNode(docCount + " / " +searchResult["hits"]["total"]));
+                return pageIndicator;
+            }
+
+
+            function insertHits(resultContainer, hits) {
+                for (var i = 0 ; i < hits.length; i++) {
+                    resultContainer.appendChild(createDocItem(hits[i]));
+                    docCount++;
+                }
+            }
+
+            window.addEventListener("scroll", function () {
+
+                if (!coolingDown) {
+                    var threshold = 200;
+
+                    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - threshold) {
+                        //load next page
+
+                        var xhttp = new XMLHttpRequest();
+                        xhttp.onreadystatechange = function() {
+                            if (this.readyState === 4 && this.status === 200) {
+
+                                var searchResult = JSON.parse(this.responseText);
+                                var searchResults = document.getElementById("searchResults");
+                                var hits = searchResult["hits"]["hits"];
+
+                                //Page indicator
+                                var pageIndicator = makePageIndicator(searchResult);
+                                searchResults.appendChild(pageIndicator);
+
+                                //Result container
+                                var resultContainer = makeResultContainer();
+                                searchResults.appendChild(resultContainer);
+
+                                insertHits(resultContainer, hits);
+
+                                initPopover();
+
+
+                                if(hits.length !== 0) {
+                                    coolingDown = false;
+                                }
+                            }
+                        };
+                        xhttp.open("GET", "/scroll?scroll_id=" + scroll_id, true);
+                        xhttp.send();
+                        coolingDown = true;
+                    }
+                }
+            });
+
+            searchBar.addEventListener("keydown", function () {
+
+                //Clear old search results
+                var searchResults =  document.getElementById("searchResults");
+                while (searchResults.firstChild) {
+                    searchResults.removeChild(searchResults.firstChild);
+                }
+
+
+                var query = searchBar.value;
+
+                console.log("query: " + query);
+
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState === 4 && this.status === 200) {
+
+                        var searchResult = JSON.parse(this.responseText);
+                        scroll_id = searchResult["_scroll_id"];
+
+                        //Search stats
+                        {#searchResults.appendChild(makeStatsCard(searchResult));#}
+
+                        //Setup page
+                        var resultContainer = makeResultContainer();
+                        searchResults.appendChild(resultContainer);
+
+                        //Insert search results (hits)
+                        insertHits(resultContainer, searchResult["hits"]["hits"]);
+
+                        initPopover();
+                    }
+                };
+                xhttp.open("GET", "/search", true);
+                xhttp.send();
+
+            });
+
+            function initPopover() {
+                $('[data-toggle="popover"]').popover({
+                    trigger: "hover",
+                    delay: { "show": 0, "hide": 400 },
+                    placement: "right",
+                    html: true
+                });
+            }
+        </script>
+    </div>
+
+
+{% endblock body %}

@@ -5,9 +5,3 @@ elasticsearch
 python-magic
 requests
 apscheduler
-ffmpeg-python
-fonttools
-chardet
-exifread
-humanfriendly
-Pillow

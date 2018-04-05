@@ -29,7 +29,12 @@ class GenericFileParserTest(TestCase):
     def test_parse_name(self):
         result = self.parser.parse("test_parse.txt")
 
-        self.assertEqual(result["name"], "test_parse.txt")
+        self.assertEqual(result["name"], "test_parse")
+
+    def test_parse_ext(self):
+        result = self.parser.parse("test_parse.txt")
+
+        self.assertEqual(result["extension"], "txt")
 
     def test_parse_md5(self):
         result = self.parser.parse("test_parse.txt")

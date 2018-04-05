@@ -127,10 +127,12 @@ class GenericFileParser(FileParser):
 
         file_stat = os.stat(full_path)
         path, name = os.path.split(full_path)
+        name, extension = os.path.splitext(name)
 
         info["size"] = file_stat.st_size
         info["path"] = path  # todo save relative path
         info["name"] = name
+        info["extension"] = extension[1:]
         info["mtime"] = file_stat.st_mtime
 
         for calculator in self.checksum_calculators:
@@ -264,13 +266,17 @@ class PictureFileParser(GenericFileParser):
 
         print("picture")
 
-        with open(full_path, "rb") as image_file:
-            with Image.open(image_file) as image:
+        try:
+            with open(full_path, "rb") as image_file:
+                with Image.open(image_file) as image:
 
-                info["mode"] = image.mode
-                info["format"] = image.format
-                info["width"] = image.width
-                info["height"] = image.height
+                    info["mode"] = image.mode
+                    info["format"] = image.format
+                    info["width"] = image.width
+                    info["height"] = image.height
+        except OSError as e:
+            print(e.strerror)
+            pass
 
         return info
 

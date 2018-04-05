@@ -11,23 +11,39 @@
             padding: 0.5rem;
         }
 
+        .document p {
+            margin-bottom: 0;
+        }
+
         .document:hover p {
             text-decoration: underline;
         }
 
         .badge-video {
-            color: #ffffff;
+            color: #FFFFFF;
             background-color: #F27761;
         }
 
         .badge-image {
-            color: #ffffff;
+            color: #FFFFFF;
             background-color: #AA99C9;
         }
 
         .badge-resolution {
             color: #212529;
-            background-color: #ffc107;
+            background-color: #FFC107;
+        }
+
+
+
+        .card-img-top {
+            display: block;
+            min-width: 64px;
+            max-width: 100%;
+            max-height: 256px;
+            width: unset;
+            margin: 0 auto 0;
+            padding: 3px 3px 0 3px;
         }
 
         .card-img-overlay {
@@ -54,6 +70,8 @@
         .fit {
             width: 100%;
             height: 100%;
+            margin-top: 3px;
+            padding: 3px;
         }
 
         @media (min-width: 1200px) {
@@ -62,7 +80,7 @@
             }
         }
 
-        @media (min-width: 1500px){
+        @media (min-width: 1500px) {
             .container  {
                 max-width: 1440px;
             }
@@ -71,7 +89,9 @@
             }
         }
 
-
+        .hl {
+            color: red;
+        }
     </style>
 
     <div class="container">
@@ -79,8 +99,14 @@
         <div class="card">
             {#            <div class="card-header">An excellent form</div>#}
             <div class="card-body">
-                <form action=""></form>
-                <input id="searchBar" type="search" class="form-control" placeholder="Search">
+                <div class="input-group mb-2">
+                    <div class="input-group-prepend">
+                        <div class="input-group-text"></div>
+                    </div>
+                    <input id="searchBar" type="search" class="form-control" placeholder="Search">
+
+                </div>
+
             </div>
         </div>
 
@@ -103,7 +129,7 @@
                 statsCardBody.setAttribute("class", "card-body");
 
                 var stat = document.createElement("p");
-                stat.appendChild(document.createTextNode(searchResult["hits"]["total"] + " results"));
+                stat.appendChild(document.createTextNode(searchResult["hits"]["total"] + " results in " + searchResult["took"] + "ms"));
                 statsCardBody.appendChild(stat);
                 statsCard.appendChild(statsCardBody);
 
@@ -156,6 +182,7 @@
              * @param documentId
              */
             function gifOver(thumbnail, documentId) {
+                var callee = arguments.callee;
 
                 thumbnail.addEventListener("mouseover", function () {
 
@@ -163,25 +190,10 @@
 
                     window.setTimeout(function() {
                         if (thumbnail.mouseStayedOver) {
-                            thumbnail.removeEventListener('mouseover', arguments.callee, false);
+                            thumbnail.removeEventListener('mouseover', callee, false);
 
                             //Load gif
-                            var gifImage = document.createElement("img");
-                            gifImage.setAttribute("src", "/file/" + documentId);
-                            gifImage.setAttribute("class", "fit");
-                            thumbnail.parentNode.appendChild(gifImage);
-
-                            thumbnail.setAttribute("style", "display: none");
-
-                            //Toggle gif/thumbnail on hover
-                            gifImage.addEventListener("mouseout", function() {
-                                gifImage.setAttribute("style", "display: none");
-                                thumbnail.setAttribute("style", "");
-                            });
-                            thumbnail.addEventListener("mouseover", function () {
-                                gifImage.setAttribute("style", "");
-                                thumbnail.setAttribute("style", "display: none");
-                            });
+                            thumbnail.setAttribute("src", "/file/" + documentId);
                         }
                     }, 750); //todo grab hover time from config
 
@@ -190,6 +202,8 @@
                 thumbnail.addEventListener("mouseout", function() {
                     //Reset timer
                     thumbnail.mouseStayedOver = false;
+                    thumbnail.setAttribute("src", "/thumb/" + documentId);
+
                 })
             }
 
@@ -210,6 +224,7 @@
                             vidSource.setAttribute("type", "video/webm");
                             video.appendChild(vidSource);
                             video.setAttribute("class", "fit");
+                            video.setAttribute("poster", "/thumb/" + documentId);
                             imgWrapper.appendChild(video);
 
                             //Video hover
@@ -247,6 +262,7 @@
                 });
             }
 
+            var counter = 0;
             /**
              *
              * @param hit
@@ -265,16 +281,18 @@
                 link.setAttribute("href", "/document/" + hit["_id"]);
                 link.setAttribute("target", "_blank");
 
+                //Title
                 var title = document.createElement("p");
                 title.setAttribute("class", "file-title");
-                title.appendChild(document.createTextNode(hit["_source"]["name"]));
-                title.setAttribute("title", hit["_source"]["name"]);
+                var extention = hit["_source"].hasOwnProperty("extension") && hit["_source"]["extension"] !== null ? "." + hit["_source"]["extension"] : "";
+                title.insertAdjacentHTML('afterbegin', hit["highlight"]["name"] + extention);
+                title.setAttribute("title", hit["_source"]["path"]);
                 docCard.appendChild(title);
 
                 var tagContainer = document.createElement("div");
                 tagContainer.setAttribute("class", "card-text");
 
-                if (hit["_source"].hasOwnProperty("mime")) {
+                if (hit["_source"].hasOwnProperty("mime") && hit["_source"]["mime"] !== null) {
 
                     var tags = [];
                     var thumbnail = null;
@@ -291,9 +309,8 @@
                         case "image":
                             thumbnail = document.createElement("img");
                             thumbnail.setAttribute("class", "card-img-top");
-                            thumbnail.setAttribute("src", "/thumb/" + hit["_source"]["directory"] + "/" + hit["_id"]);
+                            thumbnail.setAttribute("src", "/thumb/" + hit["_id"]);
                             break;
-
                     }
 
                     //Thumbnail overlay
@@ -351,6 +368,14 @@
                             break;
                     }
 
+                    //Content
+                    if (hit.hasOwnProperty("highlight") && hit["highlight"].hasOwnProperty("content")) {
+
+                        var contentDiv = document.createElement("div");
+                        contentDiv.innerHTML = hit["highlight"]["content"][0];
+                        docCard.appendChild(contentDiv);
+                    }
+
                     //Size tag
                     var sizeTag = document.createElement("small");
                     sizeTag.appendChild(document.createTextNode(humanFileSize(hit["_source"]["size"])));
@@ -387,6 +412,7 @@
             function makePageIndicator(searchResult) {
                 var pageIndicator = document.createElement("div");
                 pageIndicator.appendChild(document.createTextNode(docCount + " / " +searchResult["hits"]["total"]));
+                return pageIndicator;
             }
 
 
@@ -437,13 +463,14 @@
                 }
             });
 
-            searchBar.addEventListener("keydown", function () {
+            searchBar.addEventListener("keyup", function () {
 
                 //Clear old search results
                 var searchResults =  document.getElementById("searchResults");
                 while (searchResults.firstChild) {
                     searchResults.removeChild(searchResults.firstChild);
                 }
+
 
 
                 var query = searchBar.value;
@@ -471,7 +498,7 @@
                         initPopover();
                     }
                 };
-                xhttp.open("GET", "/search", true);
+                xhttp.open("GET", "/search?q=" + query, true);
                 xhttp.send();
 
             });

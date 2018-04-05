@@ -1,7 +1,8 @@
-import elasticsearch
-from elasticsearch import helpers
-import requests
 import json
+
+import elasticsearch
+import requests
+from elasticsearch import helpers
 
 
 class Search:
@@ -50,9 +51,34 @@ class Search:
         except:
             return 0
 
-    def search(self):
-        page = self.es.search(body={"query": {"term": {"directory": 1}}, "size": 40},
-                              index=self.index_name, scroll="3m")
+    def search(self, query):
+
+        print(query)
+
+        page = self.es.search(body={"query":
+            {"multi_match": {
+                "query": query,
+                "fields": ["name", "content"]
+            }},
+            "sort": [
+                "_score"
+            ],
+            "highlight": {
+                "fields": {
+                    "content": {"pre_tags": ["<span class='hl'>"], "post_tags": ["</span>"]},
+                    "name": {"pre_tags": ["<span class='hl'>"], "post_tags": ["</span>"]},
+                }
+            },
+            "suggest": {
+                "path": {
+                    "prefix": query,
+                    "completion": {
+                        "field": "suggest-path",
+                        "skip_duplicates": True
+                    }
+                }
+            },
+            "size": 40}, index=self.index_name, scroll="3m")
 
         return page
 
@@ -64,4 +90,7 @@ class Search:
 
     def get_doc(self, doc_id):
 
-        return self.es.get(index=self.index_name, id=doc_id, doc_type="file")
+        try:
+            return self.es.get(index=self.index_name, id=doc_id, doc_type="file")
+        except elasticsearch.exceptions.NotFoundError:
+            return None
