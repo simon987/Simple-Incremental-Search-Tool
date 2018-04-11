@@ -61,17 +61,26 @@ class Indexer:
         self.es.indices.create(index=self.index_name)
         self.es.indices.close(index=self.index_name)
 
-        self.es.indices.put_settings(body='{"analysis":{"tokenizer":{"path_tokenizer":{"type":"path_hierarchy"}}}}', index=self.index_name)
-        self.es.indices.put_settings(body='{"analysis":{"tokenizer":{"my_nGram_tokenizer":{"type":"nGram","min_gram":3,"max_gram":4}}}}')
-        self.es.indices.put_settings(body='{"analysis":{"analyzer":{"path_analyser":{"tokenizer":"path_tokenizer"}}}}')
-        self.es.indices.put_settings(body='{"analysis":{"analyzer":{"my_nGram":{"tokenizer":"my_nGram_tokenizer"}}}}')
+        self.es.indices.put_settings(body='{"analysis":{"tokenizer":{"path_tokenizer":{"type":"path_hierarchy"}}}}',
+                                     index=self.index_name)
+        self.es.indices.put_settings(body='{"analysis":{"tokenizer":{"my_nGram_tokenizer":{"type":"nGram","min_gram":3,"max_gram":4}}}}',
+                                     index=self.index_name)
+        self.es.indices.put_settings(body='{"analysis":{"analyzer":{"path_analyser":{"tokenizer":"path_tokenizer"}}}}',
+                                     index=self.index_name)
+        self.es.indices.put_settings(body='{"analysis":{"analyzer":{"my_nGram":{"tokenizer":"my_nGram_tokenizer", "filter": ["lowercase"]}}}}',
+                                     index=self.index_name)
 
         self.es.indices.put_mapping(body='{"properties": {'
                                     '"path": {"type": "text", "analyzer": "path_analyser", "copy_to": "suggest-path"},'
                                     '"suggest-path": {"type": "completion", "analyzer": "keyword"},'
                                     '"mime": {"type": "keyword"},'
                                     '"directory": {"type": "keyword"},'
-                                    '"name": {"analyzer": "my_nGram", "type": "text"}'
+                                    '"name": {"analyzer": "my_nGram", "type": "text"},'
+                                    '"album": {"analyzer": "my_nGram", "type": "text"},'
+                                    '"artist": {"analyzer": "my_nGram", "type": "text"},'
+                                    '"title": {"analyzer": "my_nGram", "type": "text"},'
+                                    '"genre": {"analyzer": "my_nGram", "type": "text"},'
+                                    '"album_artist": {"analyzer": "my_nGram", "type": "text"}'
                                     '}}', doc_type="file", index=self.index_name)
 
         self.es.indices.open(index=self.index_name)

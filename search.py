@@ -22,7 +22,7 @@ class Search:
     def get_all_documents(self, dir_id: int):
 
         return helpers.scan(client=self.es,
-                            query={"_source": {"includes": ["path", "name"]},
+                            query={"_source": {"includes": ["path", "name", "mime", "extension"]},
                                    "query": {"term": {"directory": dir_id}}},
                             index=self.index_name)
 
@@ -58,7 +58,8 @@ class Search:
         page = self.es.search(body={"query":
             {"multi_match": {
                 "query": query,
-                "fields": ["name", "content"]
+                "fields": ["name", "content", "album", "artist", "title", "genre", "album_artist"],
+                "operator": "and"
             }},
             "sort": [
                 "_score"
@@ -74,9 +75,13 @@ class Search:
                     "prefix": query,
                     "completion": {
                         "field": "suggest-path",
-                        "skip_duplicates": True
+                        "skip_duplicates": True,
+                        "size": 4000
                     }
                 }
+            },
+            "aggs": {
+                "total_size": {"sum": {"field": "size"}}
             },
             "size": 40}, index=self.index_name, scroll="3m")
 

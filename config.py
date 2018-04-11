@@ -5,5 +5,6 @@ default_options = {
     "TextFileContentLenght": "16384",
     "MimeGuesser": "extension",  # extension, content
     "CheckSumCalculators": "",  # md5, sha1, sha256
-
 }
+
+index_every = 50000

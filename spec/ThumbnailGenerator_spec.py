@@ -11,7 +11,7 @@ class ThumbnailGeneratorTest(TestCase):
 
         generator = ThumbnailGenerator(300)
         # Original image is 420x315
-        generator.generate("test_folder/sample_1.jpg", "test_thumb1.jpg")
+        generator.generate("test_folder/sample_1.jpg", "test_thumb1.jpg", "image/JPEG")
 
         img = Image.open("test_thumb1.jpg")
         width, height = img.size

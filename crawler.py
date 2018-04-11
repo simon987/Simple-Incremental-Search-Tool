@@ -10,7 +10,7 @@ from search import Search
 from thumbnail import ThumbnailGenerator
 from storage import Directory
 import shutil
-
+import config
 
 class RunningTask:
 
@@ -26,9 +26,11 @@ class RunningTask:
 
 class Crawler:
 
-    def __init__(self, enabled_parsers: list, mime_guesser: MimeGuesser=ContentMimeGuesser()):
+    def __init__(self, enabled_parsers: list, mime_guesser: MimeGuesser=ContentMimeGuesser(), indexer=None, dir_id=0):
         self.documents = []
         self.enabled_parsers = enabled_parsers
+        self.indexer = indexer
+        self.dir_id = dir_id
 
         for parser in self.enabled_parsers:
             if parser.is_default:
@@ -44,6 +46,8 @@ class Crawler:
 
     def crawl(self, root_dir: str, counter: Value=None):
 
+        document_counter = 0
+
         for root, dirs, files in os.walk(root_dir):
 
             for filename in files:
@@ -52,6 +56,13 @@ class Crawler:
                 mime = self.mime_guesser.guess_mime(full_path)
 
                 parser = self.ext_map.get(mime, self.default_parser)
+
+                document_counter += 1
+                if document_counter >= config.index_every:
+                    document_counter = 0
+
+                    self.indexer.index(self.documents, self.dir_id)
+                    self.documents.clear()
 
                 try:
                     if counter:
@@ -63,6 +74,9 @@ class Crawler:
                     self.documents.append(doc)
                 except FileNotFoundError:
                     continue  # File was deleted
+
+        if self.indexer is not None:
+            self.indexer.index(self.documents, self.dir_id)
 
     def countFiles(self, root_dir: str):
         count = 0
@@ -123,11 +137,9 @@ class TaskManager:
                      MediaFileParser(chksum_calcs),
                      TextFileParser(chksum_calcs, int(directory.get_option("TextFileContentLenght"))),
                      PictureFileParser(chksum_calcs)],
-                    mime_guesser)
+                    mime_guesser, self.indexer, directory.id)
         c.crawl(directory.path, counter)
 
-        # todo: create indexer inside the crawler and index every X files
-        Indexer("changeme").index(c.documents, directory.id)
         done.value = 1
 
     def execute_thumbnails(self, directory: Directory, total_files: Value, counter: Value, done: Value):

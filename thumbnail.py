@@ -9,18 +9,18 @@ class ThumbnailGenerator:
 
     def __init__(self, size, quality=85, color="FF00FF"):
         self.size = (size, size)
-        self.mime_guesser = ContentMimeGuesser()
         self.quality = quality
         self.color = tuple(bytes.fromhex(color))
 
-    def generate(self, path, dest_path):
+    def generate(self, path, dest_path, mime):
 
-        mime = self.mime_guesser.guess_mime(path)
+        if mime is None:
+            return
 
         if mime.startswith("image"):
+
             try:
                 self.generate_image(path, dest_path)
-                pass
             except OSError:
                 print("Not an image " + path)
 
@@ -36,16 +36,17 @@ class ThumbnailGenerator:
             except Exception as e:
                 print("Couldn't make thumbnail for " + path)
 
-    def generate_all(self, docs, dest_path, counter: Value=None):
+    def generate_all(self, docs, dest_path,  counter: Value=None):
 
         os.makedirs(dest_path, exist_ok=True)
 
         for doc in docs:
 
-            full_path = os.path.join(doc["_source"]["path"], doc["_source"]["name"])
+            extension = "" if doc["_source"]["extension"] == "" else "." + doc["_source"]["extension"]
+            full_path = os.path.join(doc["_source"]["path"], doc["_source"]["name"] + extension)
 
-            if os.path.isfile(full_path):
-                self.generate(full_path, os.path.join(dest_path, doc["_id"]))
+            if os.path.isfile(full_path) and "mime" in doc["_source"]:
+                self.generate(full_path, os.path.join(dest_path, doc["_id"]), doc["_source"]["mime"])
 
             if counter is not None:
                 counter.value += 1
@@ -53,6 +54,11 @@ class ThumbnailGenerator:
     def generate_image(self, path, dest_path):
         with open(path, "rb") as image_file:
             with Image.open(image_file) as image:
+
+                # https://stackoverflow.com/questions/43978819
+                if image.mode == "I;16":
+                    image.mode = "I"
+                    image.point(lambda i: i * (1. / 256)).convert('L')
 
                 image.thumbnail(self.size, Image.BICUBIC)
                 canvas = Image.new("RGB", image.size, self.color)
@@ -68,4 +74,3 @@ class ThumbnailGenerator:
 
                 canvas.save(dest_path, "JPEG", quality=self.quality, optimize=True)
                 canvas.close()
-

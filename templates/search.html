@@ -29,6 +29,11 @@
             background-color: #AA99C9;
         }
 
+        .badge-audio {
+            color: #FFFFFF;
+            background-color: #00ADEF;
+        }
+
         .badge-resolution {
             color: #212529;
             background-color: #FFC107;
@@ -92,6 +97,16 @@
         .hl {
             color: red;
         }
+
+        .content-div {
+            font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+            font-size: 13px;
+            padding: 1em;
+            background-color: #f5f5f5;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin: 3px;
+        }
     </style>
 
     <div class="container">
@@ -99,16 +114,31 @@
         <div class="card">
             {#            <div class="card-header">An excellent form</div>#}
             <div class="card-body">
-                <div class="input-group mb-2">
-                    <div class="input-group-prepend">
-                        <div class="input-group-text"></div>
-                    </div>
-                    <input id="searchBar" type="search" class="form-control" placeholder="Search">
-
-                </div>
+                <input id="pathBar" type="search" class="form-control" placeholder="Path">
+                <input id="searchBar" type="search" class="form-control" placeholder="Search">
 
             </div>
         </div>
+
+        <script>
+
+            new autoComplete({
+                selector: '#pathBar',
+                minChars: 1,
+                source: function(term, suggest) {
+                    term = term.toLowerCase();
+                    var choices = pathAutoComplete;
+
+                    var matches = [];
+                    for (var i=0; i<choices.length; i++) {
+                        if (~choices[i].toLowerCase().indexOf(term)) {
+                            matches.push(choices[i]);
+                        }
+                    }
+                    suggest(matches);
+                }
+            });
+        </script>
 
         <div id="searchResults">
 
@@ -130,7 +160,12 @@
 
                 var stat = document.createElement("p");
                 stat.appendChild(document.createTextNode(searchResult["hits"]["total"] + " results in " + searchResult["took"] + "ms"));
+
+                var sizeStat = document.createElement("span");
+                sizeStat.appendChild(document.createTextNode(humanFileSize(searchResult["aggregations"]["total_size"]["value"])));
+
                 statsCardBody.appendChild(stat);
+                statsCardBody.appendChild(sizeStat);
                 statsCard.appendChild(statsCardBody);
 
                 return statsCard;
@@ -284,9 +319,15 @@
                 //Title
                 var title = document.createElement("p");
                 title.setAttribute("class", "file-title");
-                var extention = hit["_source"].hasOwnProperty("extension") && hit["_source"]["extension"] !== null ? "." + hit["_source"]["extension"] : "";
-                title.insertAdjacentHTML('afterbegin', hit["highlight"]["name"] + extention);
-                title.setAttribute("title", hit["_source"]["path"]);
+                var extension = hit["_source"].hasOwnProperty("extension") && hit["_source"]["extension"] !== "" ? "." + hit["_source"]["extension"] : "";
+
+                if (hit.hasOwnProperty("highlight") && hit["highlight"].hasOwnProperty("name")) {
+                    title.insertAdjacentHTML('afterbegin', hit["highlight"]["name"] + extension);
+                } else {
+                    title.appendChild(document.createTextNode(hit["_source"]["name"]));
+                }
+
+                title.setAttribute("title", hit["_source"]["path"] + hit["_source"]["name"] + extension);
                 docCard.appendChild(title);
 
                 var tagContainer = document.createElement("div");
@@ -323,7 +364,9 @@
                             //Resolution
                             var resolutionBadge = document.createElement("span");
                             resolutionBadge.setAttribute("class", "badge badge-resolution");
-                            resolutionBadge.appendChild(document.createTextNode(hit["_source"]["width"] + "x" + hit["_source"]["height"]));
+                            if (hit["_source"].hasOwnProperty("width")) {
+                                resolutionBadge.appendChild(document.createTextNode(hit["_source"]["width"] + "x" + hit["_source"]["height"]));
+                            }
                             thumbnailOverlay.appendChild(resolutionBadge);
 
                             var format = hit["_source"]["format"];
@@ -366,36 +409,50 @@
                             tags.push(formatTag);
 
                             break;
+                        case "audio":
+                            formatTag = document.createElement("span");
+                            formatTag.setAttribute("class", "badge badge-pill badge-audio");
+                            formatTag.appendChild(document.createTextNode(hit["_source"]["format_name"]));
+                            tags.push(formatTag);
+
+                            break;
                     }
 
                     //Content
                     if (hit.hasOwnProperty("highlight") && hit["highlight"].hasOwnProperty("content")) {
 
                         var contentDiv = document.createElement("div");
-                        contentDiv.innerHTML = hit["highlight"]["content"][0];
+                        contentDiv.setAttribute("class", "content-div bg-light");
+                        contentDiv.insertAdjacentHTML('afterbegin', hit["highlight"]["content"][0]);
                         docCard.appendChild(contentDiv);
                     }
 
-                    //Size tag
-                    var sizeTag = document.createElement("small");
-                    sizeTag.appendChild(document.createTextNode(humanFileSize(hit["_source"]["size"])));
-                    sizeTag.setAttribute("class", "text-muted");
+                    //Audio
+                    if (mimeCategory === "audio") {
+
+                    }
+
+                    if (thumbnail !== null) {
+                        imgWrapper.appendChild(thumbnail);
+                        docCard.appendChild(imgWrapper);
+                    }
+                    if (thumbnailOverlay !== null) {
+                        imgWrapper.appendChild(thumbnailOverlay);
+                    }
 
                     for (var i = 0; i < tags.length; i++) {
                         tagContainer.appendChild(tags[i]);
                     }
 
-                    tagContainer.appendChild(sizeTag);
 
-                    if (thumbnail !== null) {
-                        imgWrapper.appendChild(thumbnail);
-                        docCard.appendChild(imgWrapper);
-
-                    }
-                    if (thumbnailOverlay !== null) {
-                        imgWrapper.appendChild(thumbnailOverlay);
-                    }
                 }
+
+                //Size tag
+                var sizeTag = document.createElement("small");
+                sizeTag.appendChild(document.createTextNode(humanFileSize(hit["_source"]["size"])));
+                sizeTag.setAttribute("class", "text-muted");
+                tagContainer.appendChild(sizeTag);
+
 
                 //Download button
                 downloadPopover(docCard, hit["_id"]);
@@ -463,6 +520,8 @@
                 }
             });
 
+            var pathAutoComplete;
+
             searchBar.addEventListener("keyup", function () {
 
                 //Clear old search results
@@ -487,11 +546,21 @@
                         //Search stats
                         searchResults.appendChild(makeStatsCard(searchResult));
 
+                        //Autocomplete
+                        if (searchResult.hasOwnProperty("suggest") && searchResult["suggest"].hasOwnProperty("path")) {
+                            pathAutoComplete = [];
+                            for (var i = 0; i < searchResult["suggest"]["path"][0]["options"].length; i++) {
+                                pathAutoComplete.push(searchResult["suggest"]["path"][0]["options"][i].text)
+                            }
+                        }
+
+
                         //Setup page
                         var resultContainer = makeResultContainer();
                         searchResults.appendChild(resultContainer);
 
                         //Insert search results (hits)
+                        docCount = 0;
                         insertHits(resultContainer, searchResult["hits"]["hits"]);
 
                         //Initialise download/view button popover
@@ -504,6 +573,5 @@
             });
         </script>
     </div>
-
 
 {% endblock body %}

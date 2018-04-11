@@ -79,13 +79,21 @@
 
                         try {
 
-                            var bar = document.getElementById("task-bar-" + currentTask.id);
-                            bar.setAttribute("style", "width: " + percent + "%;");
-                            document.getElementById("task-label-" + currentTask.id).innerHTML = currentTask.parsed + " / " + currentTask.total + "  (" + percent.toFixed(2) + "%)";
+                            if (currentTask.total === 0) {
 
-                            if (percent === 100) {
-                                bar.classList.add("bg-success")
+                                document.getElementById("task-label-" + currentTask.id).innerHTML = "Calculating file count...";
+
+                            } else {
+                                var bar = document.getElementById("task-bar-" + currentTask.id);
+                                bar.setAttribute("style", "width: " + percent + "%;");
+                                document.getElementById("task-label-" + currentTask.id).innerHTML = currentTask.parsed + " / " + currentTask.total + "  (" + percent.toFixed(2) + "%)";
+
+                                if (percent === 100) {
+                                    bar.classList.add("bg-success")
+                                }
                             }
+
+
 
                         } catch (e) {
                             window.reload();
