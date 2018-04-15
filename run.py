@@ -64,7 +64,7 @@ def download(doc_id):
     extension = "" if doc["extension"] is None or doc["extension"] == "" else "." + doc["extension"]
     full_path = os.path.join(directory.path, doc["path"], doc["name"] + extension)
 
-    return send_file(full_path)
+    return send_file(full_path, mimetype=doc["mime"])
 
 
 @app.route("/thumb/<doc_id>")
@@ -96,31 +96,9 @@ def thumb(doc_id):
 @app.route("/")
 def search_page():
 
-    mime_map = defaultdict(list)
-    mime_list = []
-    mime_types = search.get_mime_types()
+    mime_map = search.get_mime_map()
 
-    for mime in mime_types:
-        splited_mime = os.path.split(mime["key"])
-        mime_map[splited_mime[0]].append(splited_mime[1])
-
-    for mime in mime_map:
-        category = dict()
-        category["text"] = mime
-
-        children = []
-        for m in mime_map[mime]:
-            child = dict()
-            child["text"] = m
-            child["id"] = mime + "/" + m
-            children.append(child)
-
-        if len(children) > 0:
-            category["children"] = children
-
-        mime_list.append(category)
-
-    return render_template("search.html", directories=storage.dirs(), mime_list=mime_list)
+    return render_template("search.html", directories=storage.dirs(), mime_map=mime_map)
 
 
 @app.route("/list")
@@ -128,12 +106,18 @@ def search_liste_page():
     return render_template("searchList.html")
 
 
-@app.route("/search")
+@app.route("/search", methods=['POST'])
 def search_route():
 
-    query = request.args.get("q")
+    query = request.json["q"]
     query = "" if query is None else query
-    page = search.search(query)
+
+    size_min = request.json["size_min"]
+    size_max = request.json["size_max"]
+    mime_types = request.json["mime_types"]
+    must_match = request.json["must_match"]
+
+    page = search.search(query, size_min, size_max, mime_types, must_match)
 
     return json.dumps(page)
 

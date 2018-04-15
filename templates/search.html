@@ -143,6 +143,12 @@
             overflow: auto;
         }
 
+        .btn-xs {
+            padding: .1rem .3rem;
+            font-size: .875rem;
+            border-radius: .2rem;
+        }
+
     </style>
 
     <div class="container">
@@ -153,7 +159,13 @@
                 <div class="form-group">
                     <input id="pathBar" type="search" class="form-control" placeholder="Path">
                 </div>
-                <div class="form-group">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <div class="input-group-text">
+                            <span >Must match&nbsp</span>
+                            <input type="checkbox" onclick="toggleSearchBar()" checked>
+                        </div>
+                    </div>
                     <input id="searchBar" type="search" class="form-control" placeholder="Search">
 
                 </div>
@@ -172,7 +184,9 @@
                     </div>
 
                     <div class="col">
-                        <label for="mime">Mime types</label>
+                        <label>Mime types</label>
+
+                        <button class="btn btn-xs btn-success" onclick="toggleTree()" style="float: right">Toggle</button>
 
                         <div class="tree"></div>
                     </div>
@@ -183,14 +197,20 @@
                         selection: {
                             mode: 'checkbox'
                         },
-                        data: {{ mime_list | tojson }}
+                        data: {{ mime_map | tojson }}
                     });
                     new InspireTreeDOM(tree, {
                         target: '.tree'
                     });
 
                     //Select all
-                    tree.select()
+                    tree.select();
+
+                    tree.on("node.click", function(event, node, handler) {
+                        event.preventTreeDefault();
+                        handler();
+                        searchQueued = true;
+                    })
                 </script>
 
             </div>
@@ -223,9 +243,28 @@
         <script>
 
             var searchBar = document.getElementById("searchBar");
+            var must_match = true;
             var scroll_id = null;
-            var coolingDown = false;
             var docCount = 0;
+            var treeSelected = false;
+            var searchQueued = false;
+            var coolingDown = false;
+
+            function toggleSearchBar() {
+                must_match = !must_match;
+                searchQueued = true;
+            }
+
+            function toggleTree() {
+                if (treeSelected) {
+                    tree.select();
+                } else {
+                    tree.deselect();
+                }
+
+                treeSelected = !treeSelected;
+                searchQueued = true;
+            }
 
             function makeStatsCard(searchResult) {
 
@@ -566,6 +605,7 @@
             window.addEventListener("scroll", function () {
 
                 if (!coolingDown) {
+
                     var threshold = 200;
 
                     if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - threshold) {
@@ -591,9 +631,12 @@
 
                                 initPopover();
 
-                                if(hits.length !== 0) {
+                                if (hits.length !== 0) {
                                     coolingDown = false;
                                 }
+                                console.log(hits.length)
+
+
                             }
                         };
                         xhttp.open("GET", "/scroll?scroll_id=" + scroll_id, true);
@@ -603,11 +646,25 @@
                 }
             });
 
+            function getSelectedMimeTypes() {
+                var mimeTypes = [];
+
+                var selected = tree.selected();
+
+                for (var i = 0; i < selected.length; i++) {
+                    //Only get children
+                    if (selected[i].text.indexOf("(") !== -1) {
+                        mimeTypes.push(selected[i].id);
+                    }
+                }
+
+                return mimeTypes
+            }
 
             function search() {
-                if (!coolingDown) {
 
-                    coolingDown = true;
+                if (searchQueued === true) {
+                    searchQueued = false;
 
                     //Clear old search results
                     var searchResults =  document.getElementById("searchResults");
@@ -616,8 +673,6 @@
                     }
 
                     var query = searchBar.value;
-
-                    console.log("query: " + query);
 
                     var xhttp = new XMLHttpRequest();
                     xhttp.onreadystatechange = function() {
@@ -648,25 +703,32 @@
 
                             //Initialise download/view button popover
                             initPopover();
-
-                            window.setTimeout(function() {
-                                coolingDown = false;
-                            }, 100);
                         }
                     };
-                    xhttp.open("GET", "/search?q=" + query, true);
-                    xhttp.send();
+
+                    xhttp.open("POST", "/search", true);
+
+                    var postBody = {};
+                    postBody.q = query;
+                    postBody.size_min = size_min;
+                    postBody.size_max = size_max;
+                    postBody.mime_types = getSelectedMimeTypes();
+                    postBody.must_match = must_match;
+                    xhttp.setRequestHeader('content-type', 'application/json');
+                    xhttp.send(JSON.stringify(postBody));
                 }
             }
 
             var pathAutoComplete;
+            var size_min = 0;
+            var size_max = 10000000000000;
 
             searchBar.addEventListener("keyup", function () {
-                search();
+                searchQueued = true;
             });
 
             //Size slider
-            $("#sizeSlider").ionRangeSlider({
+            var sizeSlider = $("#sizeSlider").ionRangeSlider({
                 type: "double",
                 grid: false,
                 force_edges: true,
@@ -687,12 +749,16 @@
                     return humanFileSize(num * num * num)
                 },
                 onChange: function(e) {
-                    var from = (e.from * e.from * e.from);
-                    var to = (e.to * e.to * e.to);
+                    size_min = (e.from * e.from * e.from);
+                    size_max = (e.to * e.to * e.to);
 
-                    search();
+                    if (e.to >=  3684) {
+                        size_max = 10000000000000;
+                    }
+
+                    searchQueued = true;
                 }
-            });
+            })[0];
 
             //Directories select
             document.getElementById("directories").addEventListener("change", function () {
@@ -701,20 +767,10 @@
                 $(selectedDirs).each(function(){
                     selected.push($(this).val());
                 });
-
-                console.log(selected);
             });
 
-            //Mime types select
-            document.getElementById("mime").addEventListener("change", function () {
-                var selectedMimes = $('#mime').find('option:selected');
-                var selected = [];
-                $(selectedMimes).each(function(){
-                    selected.push($(this).val());
-                });
+            window.setInterval(search, 75)
 
-                console.log(selected);
-            });
         </script>
     </div>
 

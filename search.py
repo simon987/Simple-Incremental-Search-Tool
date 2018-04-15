@@ -1,5 +1,5 @@
 import json
-
+import os
 import elasticsearch
 import requests
 from elasticsearch import helpers
@@ -56,23 +56,65 @@ class Search:
         query = self.es.search(body={
             "aggs": {
                 "mimeTypes": {
-                    "terms": {"field": "mime_kw"}
+                    "terms": {
+                        "field": "mime_kw",
+                        "size": 10000
+                    }
                 }
             }
         })
 
         return query["aggregations"]["mimeTypes"]["buckets"]
 
-    def search(self, query):
+    def get_mime_map(self):
+
+        mime_map = []
+
+        for mime in self.get_mime_types():
+            splited_mime = os.path.split(mime["key"])
+
+            child = dict()
+            child["text"] = splited_mime[1] + " (" + str(mime["doc_count"]) + ")"
+            child["id"] = mime["key"]
+
+            mime_category_exists = False
+
+            for category in mime_map:
+                if category["text"] == splited_mime[0]:
+                    category["children"].append(child)
+                    mime_category_exists = True
+                    break
+
+            if not mime_category_exists:
+                mime_map.append({"text": splited_mime[0], "children": [child]})
+
+        return mime_map
+
+    def search(self, query, size_min, size_max, mime_types, must_match):
 
         print(query)
+        print(size_min)
+        print(size_max)
 
-        page = self.es.search(body={"query":
-            {"multi_match": {
-                "query": query,
-                "fields": ["name", "content", "album", "artist", "title", "genre", "album_artist"],
-                "operator": "and"
-            }},
+        condition = "must" if must_match else "should"
+
+        page = self.es.search(body={
+            "query": {
+                "bool": {
+                    condition: {
+                        "multi_match": {
+                            "query": query,
+                            "fields": ["name", "content", "album", "artist", "title", "genre",
+                                       "album_artist"],
+                            "operator": "and"
+                        }
+                    },
+                    "filter": [
+                        {"range": {"size": {"gte": size_min, "lte": size_max}}},
+                        {"terms": {"mime": mime_types}}
+                    ]
+                }
+            },
             "sort": [
                 "_score"
             ],
