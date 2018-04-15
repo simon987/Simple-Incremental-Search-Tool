@@ -94,7 +94,8 @@ def thumb(doc_id):
 
 @app.route("/")
 def search_page():
-    return render_template("search.html")
+    return render_template("search.html", directories=storage.dirs())
+
 
 @app.route("/list")
 def search_liste_page():

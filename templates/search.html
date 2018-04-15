@@ -112,6 +112,24 @@
             border-radius: 4px;
             margin: 3px;
         }
+
+        .irs-single, .irs-from, .irs-to {
+            font-size: 13px;
+        }
+
+        .irs-slider {
+            cursor: col-resize;
+        }
+
+        .custom-select {
+            overflow: auto;
+        }
+
+        .irs {
+            margin-top: 1em;
+            margin-bottom: 1em;
+        }
+
     </style>
 
     <div class="container">
@@ -119,8 +137,55 @@
         <div class="card">
             {#            <div class="card-header">An excellent form</div>#}
             <div class="card-body">
-                <input id="pathBar" type="search" class="form-control" placeholder="Path">
-                <input id="searchBar" type="search" class="form-control" placeholder="Search">
+                <div class="form-group">
+                    <input id="pathBar" type="search" class="form-control" placeholder="Path">
+                </div>
+                <div class="form-group">
+                    <input id="searchBar" type="search" class="form-control" placeholder="Search">
+
+                </div>
+
+                <input id="sizeSlider" name="size">
+
+                <div class="row">
+                    <div class="col">
+                        <label for="directories" >Search in directories</label>
+
+                        <select class="custom-select" id="directories" multiple size="6">
+                            {% for dir_id in directories %}
+                                <option selected value="{{ directories[dir_id].id }}">{{ directories[dir_id].name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col">
+                        <label for="mime">Mime types</label>
+
+                        <select class="custom-select" id="mime" multiple size="6">
+                            <option selected value="application">application</option>
+                            <option selected value="audio">audio</option>
+                            <option selected value="font">font</option>
+                            <option selected value="image">image</option>
+                            <option selected value="text">text</option>
+                            <option selected value="video">video</option>
+                        </select>
+                    </div>
+
+
+                </div>
+
+
+                <br>
+                <br>
+                <script type="text/javascript">
+                    //<!--
+                    $(document).ready(function() {
+                        $('#tree').tree({
+                            /* specify here your options */
+                        });
+                    });
+                    //-->
+                </script>
 
             </div>
         </div>
@@ -532,56 +597,117 @@
                 }
             });
 
+
+            function search() {
+                if (!coolingDown) {
+
+                    coolingDown = true;
+
+                    //Clear old search results
+                    var searchResults =  document.getElementById("searchResults");
+                    while (searchResults.firstChild) {
+                        searchResults.removeChild(searchResults.firstChild);
+                    }
+
+                    var query = searchBar.value;
+
+                    console.log("query: " + query);
+
+                    var xhttp = new XMLHttpRequest();
+                    xhttp.onreadystatechange = function() {
+                        if (this.readyState === 4 && this.status === 200) {
+
+                            var searchResult = JSON.parse(this.responseText);
+                            scroll_id = searchResult["_scroll_id"];
+
+                            //Search stats
+                            searchResults.appendChild(makeStatsCard(searchResult));
+
+                            //Autocomplete
+                            if (searchResult.hasOwnProperty("suggest") && searchResult["suggest"].hasOwnProperty("path")) {
+                                pathAutoComplete = [];
+                                for (var i = 0; i < searchResult["suggest"]["path"][0]["options"].length; i++) {
+                                    pathAutoComplete.push(searchResult["suggest"]["path"][0]["options"][i].text)
+                                }
+                            }
+
+
+                            //Setup page
+                            var resultContainer = makeResultContainer();
+                            searchResults.appendChild(resultContainer);
+
+                            //Insert search results (hits)
+                            docCount = 0;
+                            insertHits(resultContainer, searchResult["hits"]["hits"]);
+
+                            //Initialise download/view button popover
+                            initPopover();
+
+                            window.setTimeout(function() {
+                                coolingDown = false;
+                            }, 100);
+                        }
+                    };
+                    xhttp.open("GET", "/search?q=" + query, true);
+                    xhttp.send();
+                }
+            }
+
             var pathAutoComplete;
 
             searchBar.addEventListener("keyup", function () {
+                search();
+            });
 
-                //Clear old search results
-                var searchResults =  document.getElementById("searchResults");
-                while (searchResults.firstChild) {
-                    searchResults.removeChild(searchResults.firstChild);
-                }
+            //Size slider
+            $("#sizeSlider").ionRangeSlider({
+                type: "double",
+                grid: false,
+                force_edges: true,
+                min: 0,
+                max: 3684.03149864,
+                from: 0,
+                to: 3684.03149864,
+                min_interval: 5,
+                drag_interval: true,
+                prettify: function (num) {
 
-
-
-                var query = searchBar.value;
-
-                console.log("query: " + query);
-
-                var xhttp = new XMLHttpRequest();
-                xhttp.onreadystatechange = function() {
-                    if (this.readyState === 4 && this.status === 200) {
-
-                        var searchResult = JSON.parse(this.responseText);
-                        scroll_id = searchResult["_scroll_id"];
-
-                        //Search stats
-                        searchResults.appendChild(makeStatsCard(searchResult));
-
-                        //Autocomplete
-                        if (searchResult.hasOwnProperty("suggest") && searchResult["suggest"].hasOwnProperty("path")) {
-                            pathAutoComplete = [];
-                            for (var i = 0; i < searchResult["suggest"]["path"][0]["options"].length; i++) {
-                                pathAutoComplete.push(searchResult["suggest"]["path"][0]["options"][i].text)
-                            }
-                        }
-
-
-                        //Setup page
-                        var resultContainer = makeResultContainer();
-                        searchResults.appendChild(resultContainer);
-
-                        //Insert search results (hits)
-                        docCount = 0;
-                        insertHits(resultContainer, searchResult["hits"]["hits"]);
-
-                        //Initialise download/view button popover
-                        initPopover();
+                    if(num === 0) {
+                        return "0 B"
+                    } else if (num >= 3684) {
+                        return humanFileSize(num * num * num) + "+";
                     }
-                };
-                xhttp.open("GET", "/search?q=" + query, true);
-                xhttp.send();
 
+                    return humanFileSize(num * num * num)
+                },
+                onChange: function(e) {
+                    var from = (e.from * e.from * e.from);
+                    var to = (e.to * e.to * e.to);
+
+                    search();
+                }
+            });
+
+            //Directories select
+            document.getElementById("directories").addEventListener("change", function () {
+                var selectedDirs = $('#directories').find('option:selected');
+                var selected = [];
+                $(selectedDirs).each(function(){
+                    selected.push($(this).val());
+                });
+
+                console.log(selected);
+            });
+
+            //Mime types select
+            document.getElementById("mime").addEventListener("change", function () {
+                var selectedMimes = $('#mime').find('option:selected');
+                var selected = [];
+                $(selectedMimes).each(function(){
+                    selected.push($(this).val());
+                });
+
+                console.log(selected);
             });
         </script>
     </div>

@@ -9,3 +9,5 @@ default_options = {
 }
 
 index_every = 50000
+nGramMin = 3
+nGramMax = 3
