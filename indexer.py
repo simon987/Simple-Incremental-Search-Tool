@@ -63,11 +63,11 @@ class Indexer:
 
         self.es.indices.put_settings(body='{"analysis":{"tokenizer":{"path_tokenizer":{"type":"path_hierarchy"}}}}',
                                      index=self.index_name)
-        self.es.indices.put_settings(body='{"analysis":{"tokenizer":{"my_nGram_tokenizer":{"type":"nGram","min_gram":3,"max_gram":4}}}}',
+        self.es.indices.put_settings(body='{"analysis":{"tokenizer":{"my_nGram_tokenizer":{"type":"nGram","min_gram":3,"max_gram":3}}}}',
                                      index=self.index_name)
         self.es.indices.put_settings(body='{"analysis":{"analyzer":{"path_analyser":{"tokenizer":"path_tokenizer"}}}}',
                                      index=self.index_name)
-        self.es.indices.put_settings(body='{"analysis":{"analyzer":{"my_nGram":{"tokenizer":"my_nGram_tokenizer", "filter": ["lowercase"]}}}}',
+        self.es.indices.put_settings(body='{"analysis":{"analyzer":{"my_nGram":{"tokenizer":"my_nGram_tokenizer", "filter": ["lowercase", "asciifolding"]}}}}',
                                      index=self.index_name)
 
         self.es.indices.put_mapping(body='{"properties": {'

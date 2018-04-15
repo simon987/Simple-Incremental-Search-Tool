@@ -20,7 +20,10 @@ class ContentMimeGuesser(MimeGuesser):
         self.libmagic = magic.Magic(mime=True)
 
     def guess_mime(self, full_path):
-        return self.libmagic.from_file(full_path)
+        try:
+            return self.libmagic.from_file(full_path)
+        except FileNotFoundError:
+            return None
 
 
 class ExtensionMimeGuesser(MimeGuesser):
@@ -268,7 +271,13 @@ class TextFileParser(GenericFileParser):
             "text/x-script.scheme", "text/x-script.sh", "text/x-script.tcl",
             "text/x-script.tcsh", "text/x-script.zsh", "text/x-server-parsed-html",
             "text/x-setext", "text/x-sgml", "text/x-speech", "text/x-uil",
-            "text/x-uuencode", "text/x-vcalendar", "text/xml"
+            "text/x-uuencode", "text/x-vcalendar", "text/xml", "text/x-csrc", "text/csv",
+            "text/x-c++src", "text/x-chdr", "text/markdown", "text/x-sh", "text/x-java",
+            "text/x-python", "text/x-c++hdr", "text/x-tex", "text/x-diff", "text/x-haskell",
+            "text/x-perl", "text/x-dsrc", "text/scriptlet", "text/x-scala", "text/calendar",
+            "text/x-bibtex", "text/x-tcl", "text/x-c++", "text/x-shellscript", "text/x-msdos-batch",
+            "text/x-makefile", "text/rtf", "text/x-objective-c", "text/troff", "text/x-m4",
+            "text/x-lisp", "text/x-php", "text/x-gawk", "text/x-awk", "text/x-ruby", "text/x-po"
         ]
 
         self.encodings = [

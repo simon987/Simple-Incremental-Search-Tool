@@ -39,6 +39,11 @@
             background-color: #FFC107;
         }
 
+        .badge-text {
+            color: #FFFFFF;
+            background-color: #FAAB3C;
+        }
+
 
 
         .card-img-top {
@@ -324,7 +329,7 @@
                 if (hit.hasOwnProperty("highlight") && hit["highlight"].hasOwnProperty("name")) {
                     title.insertAdjacentHTML('afterbegin', hit["highlight"]["name"] + extension);
                 } else {
-                    title.appendChild(document.createTextNode(hit["_source"]["name"]));
+                    title.appendChild(document.createTextNode(hit["_source"]["name"] + extension));
                 }
 
                 title.setAttribute("title", hit["_source"]["path"] + hit["_source"]["name"] + extension);
@@ -413,6 +418,13 @@
                             formatTag = document.createElement("span");
                             formatTag.setAttribute("class", "badge badge-pill badge-audio");
                             formatTag.appendChild(document.createTextNode(hit["_source"]["format_name"]));
+                            tags.push(formatTag);
+
+                            break;
+                        case "text":
+                            formatTag = document.createElement("span");
+                            formatTag.setAttribute("class", "badge badge-pill badge-text");
+                            formatTag.appendChild(document.createTextNode(hit["_source"]["encoding"]));
                             tags.push(formatTag);
 
                             break;

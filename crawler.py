@@ -135,7 +135,7 @@ class TaskManager:
 
         c = Crawler([GenericFileParser(chksum_calcs),
                      MediaFileParser(chksum_calcs),
-                     TextFileParser(chksum_calcs, int(directory.get_option("TextFileContentLenght"))),
+                     TextFileParser(chksum_calcs, int(directory.get_option("TextFileContentLength"))),
                      PictureFileParser(chksum_calcs)],
                     mime_guesser, self.indexer, directory.id)
         c.crawl(directory.path, counter)

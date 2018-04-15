@@ -41,7 +41,6 @@ class ThumbnailGenerator:
         os.makedirs(dest_path, exist_ok=True)
 
         for doc in docs:
-
             extension = "" if doc["_source"]["extension"] == "" else "." + doc["_source"]["extension"]
             full_path = os.path.join(doc["_source"]["path"], doc["_source"]["name"] + extension)
 
