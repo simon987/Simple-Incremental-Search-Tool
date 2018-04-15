@@ -51,6 +51,18 @@ class Search:
         except:
             return 0
 
+    def get_mime_types(self):
+
+        query = self.es.search(body={
+            "aggs": {
+                "mimeTypes": {
+                    "terms": {"field": "mime_kw"}
+                }
+            }
+        })
+
+        return query["aggregations"]["mimeTypes"]["buckets"]
+
     def search(self, query):
 
         print(query)

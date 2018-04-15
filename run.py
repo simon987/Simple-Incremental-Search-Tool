@@ -8,6 +8,7 @@ import humanfriendly
 from search import Search
 from PIL import Image
 from io import BytesIO
+from collections import defaultdict
 
 app = Flask(__name__)
 app.secret_key = "A very secret key"
@@ -94,7 +95,32 @@ def thumb(doc_id):
 
 @app.route("/")
 def search_page():
-    return render_template("search.html", directories=storage.dirs())
+
+    mime_map = defaultdict(list)
+    mime_list = []
+    mime_types = search.get_mime_types()
+
+    for mime in mime_types:
+        splited_mime = os.path.split(mime["key"])
+        mime_map[splited_mime[0]].append(splited_mime[1])
+
+    for mime in mime_map:
+        category = dict()
+        category["text"] = mime
+
+        children = []
+        for m in mime_map[mime]:
+            child = dict()
+            child["text"] = m
+            child["id"] = mime + "/" + m
+            children.append(child)
+
+        if len(children) > 0:
+            category["children"] = children
+
+        mime_list.append(category)
+
+    return render_template("search.html", directories=storage.dirs(), mime_list=mime_list)
 
 
 @app.route("/list")

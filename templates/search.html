@@ -130,6 +130,19 @@
             margin-bottom: 1em;
         }
 
+        .inspire-tree .selected > .wholerow, .inspire-tree .selected > .title-wrap:hover + .wholerow
+        {
+            background: none;
+        }
+
+        .inspire-tree {
+            font-weight: 400;
+            font-size: 14px;
+            font-family: Helvetica, Nueue, Verdana, sans-serif;
+            max-height: 450px;
+            overflow: auto;
+        }
+
     </style>
 
     <div class="container">
@@ -161,30 +174,23 @@
                     <div class="col">
                         <label for="mime">Mime types</label>
 
-                        <select class="custom-select" id="mime" multiple size="6">
-                            <option selected value="application">application</option>
-                            <option selected value="audio">audio</option>
-                            <option selected value="font">font</option>
-                            <option selected value="image">image</option>
-                            <option selected value="text">text</option>
-                            <option selected value="video">video</option>
-                        </select>
+                        <div class="tree"></div>
                     </div>
-
-
                 </div>
 
-
-                <br>
-                <br>
                 <script type="text/javascript">
-                    //<!--
-                    $(document).ready(function() {
-                        $('#tree').tree({
-                            /* specify here your options */
-                        });
+                    var tree = new InspireTree({
+                        selection: {
+                            mode: 'checkbox'
+                        },
+                        data: {{ mime_list | tojson }}
                     });
-                    //-->
+                    new InspireTreeDOM(tree, {
+                        target: '.tree'
+                    });
+
+                    //Select all
+                    tree.select()
                 </script>
 
             </div>

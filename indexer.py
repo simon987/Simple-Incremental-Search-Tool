@@ -78,7 +78,8 @@ class Indexer:
         self.es.indices.put_mapping(body={"properties": {
             "path": {"type": "text", "analyzer": "path_analyser", "copy_to": "suggest-path"},
             "suggest-path": {"type": "completion", "analyzer": "keyword"},
-            "mime": {"type": "text", "analyzer": "path_analyser"},
+            "mime": {"type": "text", "analyzer": "path_analyser", "copy_to": "mime_kw"},
+            "mime_kw": {"type": "keyword"},
             "directory": {"type": "keyword"},
             "name": {"analyzer": "my_nGram", "type": "text"},
             "album": {"analyzer": "my_nGram", "type": "text"},

@@ -8,6 +8,6 @@ default_options = {
     "FileParsers": "media, text, picture"  # media, text, picture
 }
 
-index_every = 50000
+index_every = 10000
 nGramMin = 3
 nGramMax = 3
