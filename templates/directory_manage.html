@@ -9,19 +9,19 @@
 
         function swapToForm(elem, fields, formAction, inputName) {
 
-            var form = document.createElement("form");
+            let form = document.createElement("form");
             form.setAttribute("action", formAction);
 
-            for (var i in fields) {
+            for (let i in fields) {
 
-                var hiddenInput = document.createElement("input");
+                let hiddenInput = document.createElement("input");
                 hiddenInput.setAttribute("type", "hidden");
                 hiddenInput.setAttribute("value", fields[i].value);
                 hiddenInput.setAttribute("name", fields[i].name);
                 form.appendChild(hiddenInput);
             }
 
-            var input = document.createElement("input");
+            let input = document.createElement("input");
             input.setAttribute("class", "form-control");
             input.setAttribute("type", "text");
             input.setAttribute("name", inputName);

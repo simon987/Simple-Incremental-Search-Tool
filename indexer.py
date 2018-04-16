@@ -86,7 +86,8 @@ class Indexer:
             "artist": {"analyzer": "my_nGram", "type": "text"},
             "title": {"analyzer": "my_nGram", "type": "text"},
             "genre": {"analyzer": "my_nGram", "type": "text"},
-            "album_artist": {"analyzer": "my_nGram", "type": "text"}
+            "album_artist": {"analyzer": "my_nGram", "type": "text"},
+            "font_name": {"analyzer": "my_nGram", "type": "text"},
         }}, doc_type="file", index=self.index_name)
 
         self.es.indices.open(index=self.index_name)

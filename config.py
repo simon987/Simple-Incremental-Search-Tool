@@ -5,7 +5,7 @@ default_options = {
     "TextFileContentLength": "8192",
     "MimeGuesser": "extension",  # extension, content
     "CheckSumCalculators": "",  # md5, sha1, sha256
-    "FileParsers": "media, text, picture"  # media, text, picture
+    "FileParsers": "media, text, picture, font"  # media, text, picture
 }
 
 index_every = 10000

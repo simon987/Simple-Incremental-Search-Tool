@@ -563,9 +563,17 @@
                         docCard.appendChild(contentDiv);
                     }
 
+                    //Font_name
+                    if (hit.hasOwnProperty("highlight") && hit["highlight"].hasOwnProperty("font_name")) {
+                        let contentDiv = document.createElement("div");
+                        contentDiv.setAttribute("class", "content-div bg-light");
+                        contentDiv.insertAdjacentHTML('afterbegin', hit["highlight"]["font_name"][0]);
+                        docCard.appendChild(contentDiv);
+                    }
+
                     //Audio
                     if (mimeCategory === "audio") {
-
+                        //TODO
                     }
 
                     if (thumbnail !== null) {

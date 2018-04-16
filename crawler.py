@@ -4,13 +4,14 @@ import json
 from multiprocessing import Process, Value
 from apscheduler.schedulers.background import BackgroundScheduler
 from parsing import GenericFileParser, Md5CheckSumCalculator, ExtensionMimeGuesser, MediaFileParser, TextFileParser, \
-    PictureFileParser, Sha1CheckSumCalculator, Sha256CheckSumCalculator, ContentMimeGuesser, MimeGuesser
+    PictureFileParser, Sha1CheckSumCalculator, Sha256CheckSumCalculator, ContentMimeGuesser, MimeGuesser, FontParser
 from indexer import Indexer
 from search import Search
 from thumbnail import ThumbnailGenerator
 from storage import Directory
 import shutil
 import config
+
 
 class RunningTask:
 
@@ -136,7 +137,8 @@ class TaskManager:
         c = Crawler([GenericFileParser(chksum_calcs),
                      MediaFileParser(chksum_calcs),
                      TextFileParser(chksum_calcs, int(directory.get_option("TextFileContentLength"))),
-                     PictureFileParser(chksum_calcs)],
+                     PictureFileParser(chksum_calcs),
+                     FontParser(chksum_calcs)],
                     mime_guesser, self.indexer, directory.id)
         c.crawl(directory.path, counter)
 

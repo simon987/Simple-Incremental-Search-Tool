@@ -28,7 +28,7 @@ class ThumbnailGenerator:
             try:
                 (ffmpeg.
                  input(path)
-                 .output("tmp", vframes=1, f="image2", loglevel="error")
+                 .overwrite_output("tmp", vframes=1, f="image2", loglevel="error")
                  .run()
                  )
                 self.generate_image("tmp", dest_path)

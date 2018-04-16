@@ -100,6 +100,7 @@ def thumb(doc_id):
 def search_page():
 
     mime_map = search.get_mime_map()
+    mime_map.append({"id": "any", "text": "Any"})
 
     return render_template("search.html", directories=storage.dirs(), mime_map=mime_map)
 

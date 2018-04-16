@@ -97,12 +97,14 @@ class Search:
 
         filters = [
             {"range": {"size": {"gte": size_min, "lte": size_max}}},
-            {"terms": {"mime": mime_types}},
             {"terms": {"directory": directories}}
         ]
 
         if path != "":
             filters.append({"term": {"path": path}})
+
+        if mime_types != "any":
+            filters.append({"terms": {"mime": mime_types}})
 
         page = self.es.search(body={
             "query": {
@@ -111,7 +113,7 @@ class Search:
                         "multi_match": {
                             "query": query,
                             "fields": ["name", "content", "album", "artist", "title", "genre",
-                                       "album_artist"],
+                                       "album_artist", "font_name"],
                             "operator": "and"
                         }
                     },
@@ -125,6 +127,7 @@ class Search:
                 "fields": {
                     "content": {"pre_tags": ["<span class='hl'>"], "post_tags": ["</span>"]},
                     "name": {"pre_tags": ["<span class='hl'>"], "post_tags": ["</span>"]},
+                    "font_name": {"pre_tags": ["<span class='hl'>"], "post_tags": ["</span>"]},
                 }
             },
             "aggs": {

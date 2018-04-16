@@ -5,3 +5,9 @@ elasticsearch
 python-magic
 requests
 apscheduler
+humanfriendly
+chardet
+fonttools
+brotli
+unicodedata2
+slate
