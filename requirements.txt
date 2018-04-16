@@ -10,4 +10,6 @@ chardet
 fonttools
 brotli
 unicodedata2
-slate
+pdfminer.six
+ebooklib
+html2text

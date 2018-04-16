@@ -10,7 +10,7 @@ class FontParserTest(TestCase):
 
         info = parser.parse("test_files/truetype1.ttf")
 
-        self.assertEqual(info["font_name"], "Liberation Mono Bold")
+        self.assertEqual(info["content"], "Liberation Mono Bold")
 
     def test_parse_name_openType(self):
 
@@ -18,7 +18,7 @@ class FontParserTest(TestCase):
 
         info = parser.parse("test_files/opentype1.otf")
 
-        self.assertEqual(info["font_name"], "Linux Biolinum Keyboard O")
+        self.assertEqual(info["content"], "Linux Biolinum Keyboard O")
 
     def test_parse_name_woff(self):
 
@@ -26,7 +26,7 @@ class FontParserTest(TestCase):
 
         info = parser.parse("test_files/woff.woff")
 
-        self.assertEqual(info["font_name"], "Heart of Gold")
+        self.assertEqual(info["content"], "Heart of Gold")
 
     def test_parse_name_woff2(self):
 
@@ -34,4 +34,4 @@ class FontParserTest(TestCase):
 
         info = parser.parse("test_files/woff2.woff2")
 
-        self.assertEqual(info["font_name"], "Heart of Gold")
+        self.assertEqual(info["content"], "Heart of Gold")

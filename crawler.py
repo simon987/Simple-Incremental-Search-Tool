@@ -4,7 +4,8 @@ import json
 from multiprocessing import Process, Value
 from apscheduler.schedulers.background import BackgroundScheduler
 from parsing import GenericFileParser, Md5CheckSumCalculator, ExtensionMimeGuesser, MediaFileParser, TextFileParser, \
-    PictureFileParser, Sha1CheckSumCalculator, Sha256CheckSumCalculator, ContentMimeGuesser, MimeGuesser, FontParser
+    PictureFileParser, Sha1CheckSumCalculator, Sha256CheckSumCalculator, ContentMimeGuesser, MimeGuesser, FontParser, \
+    PdfFileParser
 from indexer import Indexer
 from search import Search
 from thumbnail import ThumbnailGenerator
@@ -138,7 +139,8 @@ class TaskManager:
                      MediaFileParser(chksum_calcs),
                      TextFileParser(chksum_calcs, int(directory.get_option("TextFileContentLength"))),
                      PictureFileParser(chksum_calcs),
-                     FontParser(chksum_calcs)],
+                     FontParser(chksum_calcs),
+                     PdfFileParser(chksum_calcs, int(directory.get_option("TextFileContentLength")))],  # todo get content len from other opt
                     mime_guesser, self.indexer, directory.id)
         c.crawl(directory.path, counter)
 

@@ -7,6 +7,15 @@ import json
 import chardet
 import html
 import warnings
+from pdfminer.pdfparser import PDFParser
+from pdfminer.pdfdocument import PDFDocument
+from pdfminer.pdfpage import PDFPage
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.layout import LAParams, LTTextBox, LTTextLine
+from pdfminer.converter import PDFPageAggregator
+import html2text
+from ebooklib import epub
+import ebooklib
 from PIL import Image
 from fontTools.ttLib import TTFont, TTLibError
 
@@ -242,9 +251,9 @@ class PictureFileParser(GenericFileParser):
 class TextFileParser(GenericFileParser):
     is_default = False
 
-    def __init__(self, checksum_calculators: list, content_lenght: int):
+    def __init__(self, checksum_calculators: list, content_length: int):
         super().__init__(checksum_calculators)
-        self.content_lenght = content_lenght
+        self.content_length = content_length
 
         self.mime_types = [
             "text/asp", "text/css", "text/ecmascript", "text/html", "text/javascript",
@@ -293,7 +302,7 @@ class TextFileParser(GenericFileParser):
         info = super().parse(full_path)
 
         with open(full_path, "rb") as text_file:
-            raw_content = text_file.read(self.content_lenght)
+            raw_content = text_file.read(self.content_length)
 
             chardet.detect(raw_content)
             encoding = chardet.detect(raw_content)["encoding"]
@@ -321,7 +330,6 @@ class FontParser(GenericFileParser):
     def parse(self, full_path: str):
 
         info = super().parse(full_path)
-        print(info)
 
         with open(full_path, "rb") as f:
 
@@ -336,7 +344,7 @@ class FontParser(GenericFileParser):
                         try:
                             for name in font["name"].names:
                                 if name.nameID == 4:
-                                    info["font_name"] = name.toUnicode("replace")
+                                    info["content"] = name.toUnicode("replace")
                                     break
                         except AssertionError:
                             print("Could not read font name for " + full_path)
@@ -344,3 +352,100 @@ class FontParser(GenericFileParser):
                     print("Could not read font for " + full_path)
 
         return info
+
+
+class PdfFileParser(GenericFileParser):
+    is_default = False
+
+    def __init__(self, checksum_calculators: list, content_length: int):
+        super().__init__(checksum_calculators)
+
+        self.content_length = content_length
+
+        self.mime_types = [
+            "application/pdf", "application/x-pdf"
+        ]
+
+    def parse(self, full_path: str):
+        info = super().parse(full_path)
+
+        with open(full_path, "rb") as f:
+
+            info["content"] = ""
+
+            parser = PDFParser(f)
+            document = PDFDocument(parser)
+
+            if len(document.info) > 0 and "Title" in document.info[0] and document.info[0]["Title"] != b"":
+                info["content"] += document.info[0]["Title"].decode("utf-8", "replace") + "\n"
+
+            try:
+                if document.is_extractable:
+                    resource_manager = PDFResourceManager()
+                    la_params = LAParams()
+
+                    device = PDFPageAggregator(resource_manager, laparams=la_params)
+                    interpreter = PDFPageInterpreter(resource_manager, device)
+
+                    for page in PDFPage.create_pages(document):
+
+                        interpreter.process_page(page)
+                        layout = device.get_result()
+
+                        for lt_obj in layout:
+                            if isinstance(lt_obj, LTTextBox) or isinstance(lt_obj, LTTextLine):
+
+                                text = lt_obj.get_text()
+
+                                if len(info["content"]) + len(text) <= self.content_length:
+                                    info["content"] += text
+                                else:
+                                    info["content"] += text[0:self.content_length - len(info["content"])]
+                                    break
+                        else:
+                            continue
+                        break
+                else:
+                    print("PDF is not extractable: " + full_path)
+            except ValueError:
+                print("Couldn't parse page for " + full_path)
+
+        return info
+
+
+class EbookParser(GenericFileParser):
+    is_default = False
+
+    def __init__(self, checksum_calculators: list, content_length: int):
+        super().__init__(checksum_calculators)
+
+        self.content_length = content_length
+
+        self.mime_types = [
+            "application/epub+zip"
+        ]
+
+        self.html2text = html2text.HTML2Text()
+        self.html2text.ignore_images = True
+        self.html2text.ignore_emphasis = True
+
+    def parse(self, full_path: str):
+        info = super().parse(full_path)
+
+        book = epub.read_epub(full_path)
+
+        info["content"] = ""
+
+        for text in book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
+
+            text = self.html2text.handle(text.content.decode("utf-8"))
+
+            if len(info["content"]) + len(text) <= self.content_length:
+                info["content"] += text
+            else:
+                info["content"] += text[0:self.content_length - len(info["content"])]
+                break
+
+        return info
+
+
