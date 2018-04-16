@@ -7,6 +7,7 @@
 {% block body %}
 
     <style>
+        body    {overflow-y:scroll;}
         .document {
             padding: 0.5rem;
         }
@@ -44,8 +45,6 @@
             background-color: #FAAB3C;
         }
 
-
-
         .card-img-top {
             display: block;
             min-width: 64px;
@@ -80,8 +79,11 @@
         .fit {
             width: 100%;
             height: 100%;
-            margin-top: 3px;
+        {#            margin-top: 3px;#}
             padding: 3px;
+            min-width: 64px;
+            max-width: 100%;
+            max-height: 256px;
         }
 
         @media (min-width: 1200px) {
@@ -162,8 +164,8 @@
                 <div class="input-group">
                     <div class="input-group-prepend">
                         <div class="input-group-text">
-                            <span >Must match&nbsp</span>
-                            <input type="checkbox" onclick="toggleSearchBar()" checked>
+                            <span onclick="document.getElementById('barToggle').click()">Must match&nbsp</span>
+                            <input type="checkbox" id="barToggle" onclick="toggleSearchBar()" checked>
                         </div>
                     </div>
                     <input id="searchBar" type="search" class="form-control" placeholder="Search">
@@ -178,7 +180,9 @@
 
                         <select class="custom-select" id="directories" multiple size="6">
                             {% for dir_id in directories %}
-                                <option selected value="{{ directories[dir_id].id }}">{{ directories[dir_id].name }}</option>
+                                {% if directories[dir_id].enabled %}
+                                    <option selected value="{{ directories[dir_id].id }}">{{ directories[dir_id].name }}</option>
+                                {% endif %}
                             {% endfor %}
                         </select>
                     </div>
@@ -193,7 +197,7 @@
                 </div>
 
                 <script type="text/javascript">
-                    var tree = new InspireTree({
+                    let tree = new InspireTree({
                         selection: {
                             mode: 'checkbox'
                         },
@@ -221,17 +225,25 @@
             new autoComplete({
                 selector: '#pathBar',
                 minChars: 1,
-                source: function(term, suggest) {
+                delay: 75,
+                renderItem: function (item, search){
+                    return '<div class="autocomplete-suggestion" data-val="' + item + '">' + item + '</div>';
+                },
+                source: async function(term, suggest) {
                     term = term.toLowerCase();
-                    var choices = pathAutoComplete;
 
-                    var matches = [];
-                    for (var i=0; i<choices.length; i++) {
+                    const choices = await getPathChoices();
+
+                    let matches = [];
+                    for (let i=0; i<choices.length; i++) {
                         if (~choices[i].toLowerCase().indexOf(term)) {
                             matches.push(choices[i]);
                         }
                     }
                     suggest(matches);
+                },
+                onSelect: function(event, term, item) {
+                    searchQueued = true;
                 }
             });
         </script>
@@ -242,13 +254,15 @@
 
         <script>
 
-            var searchBar = document.getElementById("searchBar");
-            var must_match = true;
-            var scroll_id = null;
-            var docCount = 0;
-            var treeSelected = false;
-            var searchQueued = false;
-            var coolingDown = false;
+            let searchBar = document.getElementById("searchBar");
+            let pathBar = document.getElementById("pathBar");
+            let must_match = true;
+            let scroll_id = null;
+            let docCount = 0;
+            let treeSelected = false;
+            let searchQueued = false;
+            let coolingDown = false;
+            let selectedDirs = [];
 
             function toggleSearchBar() {
                 must_match = !must_match;
@@ -268,15 +282,15 @@
 
             function makeStatsCard(searchResult) {
 
-                var statsCard = document.createElement("div");
+                let statsCard = document.createElement("div");
                 statsCard.setAttribute("class", "card");
-                var statsCardBody = document.createElement("div");
+                let statsCardBody = document.createElement("div");
                 statsCardBody.setAttribute("class", "card-body");
 
-                var stat = document.createElement("p");
+                let stat = document.createElement("p");
                 stat.appendChild(document.createTextNode(searchResult["hits"]["total"] + " results in " + searchResult["took"] + "ms"));
 
-                var sizeStat = document.createElement("span");
+                let sizeStat = document.createElement("span");
                 sizeStat.appendChild(document.createTextNode(humanFileSize(searchResult["aggregations"]["total_size"]["value"])));
 
                 statsCardBody.appendChild(stat);
@@ -287,7 +301,7 @@
             }
 
             function makeResultContainer() {
-                var resultContainer = document.createElement("div");
+                let resultContainer = document.createElement("div");
                 resultContainer.setAttribute("class", "card-columns");
 
                 return resultContainer;
@@ -302,12 +316,12 @@
                     return "? B"
                 }
 
-                var thresh = 1000;
+                let thresh = 1000;
                 if(Math.abs(bytes) < thresh) {
                     return bytes + ' B';
                 }
-                var units = ['kB','MB','GB','TB','PB','EB','ZB','YB'];
-                var u = -1;
+                let units = ['kB','MB','GB','TB','PB','EB','ZB','YB'];
+                let u = -1;
                 do {
                     bytes /= thresh;
                     ++u;
@@ -332,7 +346,7 @@
              * @param documentId
              */
             function gifOver(thumbnail, documentId) {
-                var callee = arguments.callee;
+                let callee = arguments.callee;
 
                 thumbnail.addEventListener("mouseover", function () {
 
@@ -357,37 +371,34 @@
                 })
             }
 
-            function videoOver(thumbnail, imgWrapper, thumbnailOverlay, documentId) {
+            function videoOver(thumbnail, imgWrapper, thumbnailOverlay, documentId, docCard) {
 
-                thumbnail.addEventListener("mouseover", function () {
 
-                    this.mouseStayedOver = true;
+                docCard.addEventListener("focus", function () {
+                    let callee = arguments.callee;
+                    docCard.mouseStayedOver = true;
 
                     window.setTimeout(function() {
-                        if(thumbnail.mouseStayedOver) {
+
+                        if(docCard.mouseStayedOver) {
+                            docCard.removeEventListener('focus', callee, false);
+
                             imgWrapper.removeChild(thumbnail);
                             imgWrapper.removeChild(thumbnailOverlay);
 
-                            var video = document.createElement("video");
-                            var vidSource = document.createElement("source");
+                            let video = document.createElement("video");
+                            let vidSource = document.createElement("source");
                             vidSource.setAttribute("src", "/file/" + documentId);
                             vidSource.setAttribute("type", "video/webm");
                             video.appendChild(vidSource);
                             video.setAttribute("class", "fit");
+                            video.setAttribute("loop", "");
+                            video.setAttribute("controls", "");
+                            video.setAttribute("preload", "");
                             video.setAttribute("poster", "/thumb/" + documentId);
                             imgWrapper.appendChild(video);
 
-                            //Video hover
-                            video.addEventListener("mouseover", function() {
-                                var isPlaying = video.currentTime > 0 && !video.paused && !video.ended && video.readyState > 2;
-
-                                if (!isPlaying) {
-                                    video.play();
-                                }
-                            });
-
-                            video.addEventListener("mouseout", function() {
-                                video.currentTime = 0;
+                            docCard.addEventListener("blur", function() {
                                 video.pause();
                             });
 
@@ -397,8 +408,8 @@
                         }
                     }, 750);
                 });
-                thumbnail.addEventListener("mouseout", function() {
-                    this.mouseStayedOver = false;
+                docCard.addEventListener("blur", function() {
+                    docCard.mouseStayedOver = false;
                 });
             }
 
@@ -412,7 +423,7 @@
                 });
             }
 
-            var counter = 0;
+            let counter = 0;
             /**
              *
              * @param hit
@@ -420,21 +431,21 @@
              */
             function createDocCard(hit) {
 
-                var docCard = document.createElement("div");
+                let docCard = document.createElement("div");
                 docCard.setAttribute("class", "card");
                 docCard.setAttribute("tabindex", "-1");
 
-                var docCardBody = document.createElement("div");
+                let docCardBody = document.createElement("div");
                 docCardBody.setAttribute("class", "card-body document");
 
-                var link = document.createElement("a");
+                let link = document.createElement("a");
                 link.setAttribute("href", "/document/" + hit["_id"]);
                 link.setAttribute("target", "_blank");
 
                 //Title
-                var title = document.createElement("p");
+                let title = document.createElement("p");
                 title.setAttribute("class", "file-title");
-                var extension = hit["_source"].hasOwnProperty("extension") && hit["_source"]["extension"] !== "" ? "." + hit["_source"]["extension"] : "";
+                let extension = hit["_source"].hasOwnProperty("extension") && hit["_source"]["extension"] !== "" ? "." + hit["_source"]["extension"] : "";
 
                 if (hit.hasOwnProperty("highlight") && hit["highlight"].hasOwnProperty("name")) {
                     title.insertAdjacentHTML('afterbegin', hit["highlight"]["name"] + extension);
@@ -445,18 +456,18 @@
                 title.setAttribute("title", hit["_source"]["path"] + hit["_source"]["name"] + extension);
                 docCard.appendChild(title);
 
-                var tagContainer = document.createElement("div");
+                let tagContainer = document.createElement("div");
                 tagContainer.setAttribute("class", "card-text");
 
                 if (hit["_source"].hasOwnProperty("mime") && hit["_source"]["mime"] !== null) {
 
-                    var tags = [];
-                    var thumbnail = null;
-                    var thumbnailOverlay = null;
-                    var imgWrapper = document.createElement("div");
+                    let tags = [];
+                    let thumbnail = null;
+                    let thumbnailOverlay = null;
+                    let imgWrapper = document.createElement("div");
                     imgWrapper.setAttribute("style", "position: relative");
 
-                    var mimeCategory = hit["_source"]["mime"].split("/")[0];
+                    let mimeCategory = hit["_source"]["mime"].split("/")[0];
 
                     //Thumbnail
                     switch (mimeCategory) {
@@ -477,7 +488,7 @@
                             thumbnailOverlay.setAttribute("class", "card-img-overlay");
 
                             //Resolution
-                            var resolutionBadge = document.createElement("span");
+                            let resolutionBadge = document.createElement("span");
                             resolutionBadge.setAttribute("class", "badge badge-resolution");
                             if (hit["_source"].hasOwnProperty("width")) {
                                 resolutionBadge.appendChild(document.createTextNode(hit["_source"]["width"] + "x" + hit["_source"]["height"]));
@@ -497,13 +508,13 @@
                             thumbnailOverlay.setAttribute("class", "card-img-overlay");
 
                             //Duration
-                            var durationBadge = document.createElement("span");
+                            let durationBadge = document.createElement("span");
                             durationBadge.setAttribute("class", "badge badge-resolution");
                             durationBadge.appendChild(document.createTextNode(parseFloat(hit["_source"]["duration"]).toFixed(2) + "s"));
                             thumbnailOverlay.appendChild(durationBadge);
 
                             //Hover
-                            videoOver(thumbnail, imgWrapper, thumbnailOverlay, hit["_id"])
+                            videoOver(thumbnail, imgWrapper, thumbnailOverlay, hit["_id"], docCard)
 
                     }
 
@@ -511,13 +522,16 @@
                     switch (mimeCategory) {
 
                         case "video":
-                            var formatTag = document.createElement("span");
-                            formatTag.setAttribute("class", "badge badge-pill badge-video");
-                            formatTag.appendChild(document.createTextNode(hit["_source"]["format_long_name"].replace(" ", "")));
-                            tags.push(formatTag);
+                            if (hit["_source"].hasOwnProperty("format_long_name")) {
+                                let formatTag = document.createElement("span");
+                                formatTag.setAttribute("class", "badge badge-pill badge-video");
+                                formatTag.appendChild(document.createTextNode(hit["_source"]["format_long_name"].replace(" ", "")));
+                                tags.push(formatTag);
+                            }
 
                             break;
                         case "image":
+
                             formatTag = document.createElement("span");
                             formatTag.setAttribute("class", "badge badge-pill badge-image");
                             formatTag.appendChild(document.createTextNode(format));
@@ -543,7 +557,7 @@
                     //Content
                     if (hit.hasOwnProperty("highlight") && hit["highlight"].hasOwnProperty("content")) {
 
-                        var contentDiv = document.createElement("div");
+                        let contentDiv = document.createElement("div");
                         contentDiv.setAttribute("class", "content-div bg-light");
                         contentDiv.insertAdjacentHTML('afterbegin', hit["highlight"]["content"][0]);
                         docCard.appendChild(contentDiv);
@@ -562,7 +576,7 @@
                         imgWrapper.appendChild(thumbnailOverlay);
                     }
 
-                    for (var i = 0; i < tags.length; i++) {
+                    for (let i = 0; i < tags.length; i++) {
                         tagContainer.appendChild(tags[i]);
                     }
 
@@ -570,7 +584,7 @@
                 }
 
                 //Size tag
-                var sizeTag = document.createElement("small");
+                let sizeTag = document.createElement("small");
                 sizeTag.appendChild(document.createTextNode(humanFileSize(hit["_source"]["size"])));
                 sizeTag.setAttribute("class", "text-muted");
                 tagContainer.appendChild(sizeTag);
@@ -589,14 +603,14 @@
             }
 
             function makePageIndicator(searchResult) {
-                var pageIndicator = document.createElement("div");
+                let pageIndicator = document.createElement("div");
                 pageIndicator.appendChild(document.createTextNode(docCount + " / " +searchResult["hits"]["total"]));
                 return pageIndicator;
             }
 
 
             function insertHits(resultContainer, hits) {
-                for (var i = 0 ; i < hits.length; i++) {
+                for (let i = 0 ; i < hits.length; i++) {
                     resultContainer.appendChild(createDocCard(hits[i]));
                     docCount++;
                 }
@@ -606,25 +620,25 @@
 
                 if (!coolingDown) {
 
-                    var threshold = 200;
+                    let threshold = 350;
 
                     if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - threshold) {
                         //load next page
 
-                        var xhttp = new XMLHttpRequest();
+                        let xhttp = new XMLHttpRequest();
                         xhttp.onreadystatechange = function() {
                             if (this.readyState === 4 && this.status === 200) {
 
-                                var searchResult = JSON.parse(this.responseText);
-                                var searchResults = document.getElementById("searchResults");
-                                var hits = searchResult["hits"]["hits"];
+                                let searchResult = JSON.parse(this.responseText);
+                                let searchResults = document.getElementById("searchResults");
+                                let hits = searchResult["hits"]["hits"];
 
                                 //Page indicator
-                                var pageIndicator = makePageIndicator(searchResult);
+                                let pageIndicator = makePageIndicator(searchResult);
                                 searchResults.appendChild(pageIndicator);
 
                                 //Result container
-                                var resultContainer = makeResultContainer();
+                                let resultContainer = makeResultContainer();
                                 searchResults.appendChild(resultContainer);
 
                                 insertHits(resultContainer, hits);
@@ -634,9 +648,6 @@
                                 if (hits.length !== 0) {
                                     coolingDown = false;
                                 }
-                                console.log(hits.length)
-
-
                             }
                         };
                         xhttp.open("GET", "/scroll?scroll_id=" + scroll_id, true);
@@ -647,11 +658,11 @@
             });
 
             function getSelectedMimeTypes() {
-                var mimeTypes = [];
+                let mimeTypes = [];
 
-                var selected = tree.selected();
+                let selected = tree.selected();
 
-                for (var i = 0; i < selected.length; i++) {
+                for (let i = 0; i < selected.length; i++) {
                     //Only get children
                     if (selected[i].text.indexOf("(") !== -1) {
                         mimeTypes.push(selected[i].id);
@@ -667,18 +678,18 @@
                     searchQueued = false;
 
                     //Clear old search results
-                    var searchResults =  document.getElementById("searchResults");
+                    let searchResults =  document.getElementById("searchResults");
                     while (searchResults.firstChild) {
                         searchResults.removeChild(searchResults.firstChild);
                     }
 
-                    var query = searchBar.value;
+                    let query = searchBar.value;
 
-                    var xhttp = new XMLHttpRequest();
+                    let xhttp = new XMLHttpRequest();
                     xhttp.onreadystatechange = function() {
                         if (this.readyState === 4 && this.status === 200) {
 
-                            var searchResult = JSON.parse(this.responseText);
+                            let searchResult = JSON.parse(this.responseText);
                             scroll_id = searchResult["_scroll_id"];
 
                             //Search stats
@@ -687,14 +698,14 @@
                             //Autocomplete
                             if (searchResult.hasOwnProperty("suggest") && searchResult["suggest"].hasOwnProperty("path")) {
                                 pathAutoComplete = [];
-                                for (var i = 0; i < searchResult["suggest"]["path"][0]["options"].length; i++) {
+                                for (let i = 0; i < searchResult["suggest"]["path"][0]["options"].length; i++) {
                                     pathAutoComplete.push(searchResult["suggest"]["path"][0]["options"][i].text)
                                 }
                             }
 
 
                             //Setup page
-                            var resultContainer = makeResultContainer();
+                            let resultContainer = makeResultContainer();
                             searchResults.appendChild(resultContainer);
 
                             //Insert search results (hits)
@@ -708,27 +719,29 @@
 
                     xhttp.open("POST", "/search", true);
 
-                    var postBody = {};
+                    let postBody = {};
                     postBody.q = query;
                     postBody.size_min = size_min;
                     postBody.size_max = size_max;
                     postBody.mime_types = getSelectedMimeTypes();
                     postBody.must_match = must_match;
+                    postBody.directories = selectedDirs;
+                    postBody.path = pathBar.value.replace(/\/$/, ""); //remove trailing slashes
                     xhttp.setRequestHeader('content-type', 'application/json');
                     xhttp.send(JSON.stringify(postBody));
                 }
             }
 
-            var pathAutoComplete;
-            var size_min = 0;
-            var size_max = 10000000000000;
+            let pathAutoComplete = [];
+            let size_min = 0;
+            let size_max = 10000000000000;
 
             searchBar.addEventListener("keyup", function () {
                 searchQueued = true;
             });
 
             //Size slider
-            var sizeSlider = $("#sizeSlider").ionRangeSlider({
+            let sizeSlider = $("#sizeSlider").ionRangeSlider({
                 type: "double",
                 grid: false,
                 force_edges: true,
@@ -761,13 +774,34 @@
             })[0];
 
             //Directories select
-            document.getElementById("directories").addEventListener("change", function () {
-                var selectedDirs = $('#directories').find('option:selected');
-                var selected = [];
-                $(selectedDirs).each(function(){
-                    selected.push($(this).val());
+            function updateDirectories() {
+                let selected = $('#directories').find('option:selected');
+                selectedDirs = [];
+                $(selected).each(function(){
+                    selectedDirs.push(parseInt($(this).val()));
                 });
-            });
+
+                searchQueued = true;
+            }
+            document.getElementById("directories").addEventListener("change", updateDirectories);
+            updateDirectories();
+            searchQueued = false;
+
+            //Suggest
+            function getPathChoices() {
+                return new Promise(getPaths => {
+
+                    let xhttp = new XMLHttpRequest();
+                    xhttp.onreadystatechange = function() {
+                        if (this.readyState === 4 && this.status === 200) {
+                            getPaths(JSON.parse(xhttp.responseText))
+                        }
+                    };
+                    xhttp.open("GET", "/suggest?prefix=" + pathBar.value, true);
+                    xhttp.send();
+                });
+            }
+
 
             window.setInterval(search, 75)
 

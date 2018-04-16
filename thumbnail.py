@@ -21,8 +21,8 @@ class ThumbnailGenerator:
 
             try:
                 self.generate_image(path, dest_path)
-            except OSError:
-                print("Not an image " + path)
+            except Exception:
+                print("Couldn't make thumbnail for " + path)
 
         elif mime.startswith("video"):
             try:

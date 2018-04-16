@@ -90,13 +90,19 @@ class Search:
 
         return mime_map
 
-    def search(self, query, size_min, size_max, mime_types, must_match):
-
-        print(query)
-        print(size_min)
-        print(size_max)
+    def search(self, query, size_min, size_max, mime_types, must_match, directories, path):
 
         condition = "must" if must_match else "should"
+        print(directories)
+
+        filters = [
+            {"range": {"size": {"gte": size_min, "lte": size_max}}},
+            {"terms": {"mime": mime_types}},
+            {"terms": {"directory": directories}}
+        ]
+
+        if path != "":
+            filters.append({"term": {"path": path}})
 
         page = self.es.search(body={
             "query": {
@@ -109,10 +115,7 @@ class Search:
                             "operator": "and"
                         }
                     },
-                    "filter": [
-                        {"range": {"size": {"gte": size_min, "lte": size_max}}},
-                        {"terms": {"mime": mime_types}}
-                    ]
+                    "filter": filters
                 }
             },
             "sort": [
@@ -124,22 +127,34 @@ class Search:
                     "name": {"pre_tags": ["<span class='hl'>"], "post_tags": ["</span>"]},
                 }
             },
-            "suggest": {
-                "path": {
-                    "prefix": query,
-                    "completion": {
-                        "field": "suggest-path",
-                        "skip_duplicates": True,
-                        "size": 4000
-                    }
-                }
-            },
             "aggs": {
                 "total_size": {"sum": {"field": "size"}}
             },
             "size": 40}, index=self.index_name, scroll="3m")
 
         return page
+
+    def suggest(self, prefix):
+
+        suggestions = self.es.search(body={
+            "suggest": {
+                "path": {
+                    "prefix": prefix,
+                    "completion": {
+                        "field": "suggest-path",
+                        "skip_duplicates": True,
+                        "size": 10000
+                    }
+                }
+            }
+        })
+
+        path_list = []
+
+        for option in suggestions["suggest"]["path"][0]["options"]:
+            path_list.append(option["_source"]["path"])
+
+        return path_list
 
     def scroll(self, scroll_id):
 

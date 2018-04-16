@@ -8,7 +8,6 @@ import humanfriendly
 from search import Search
 from PIL import Image
 from io import BytesIO
-from collections import defaultdict
 
 app = Flask(__name__)
 app.secret_key = "A very secret key"
@@ -16,8 +15,6 @@ storage = LocalStorage("local_storage.db")
 
 tm = TaskManager(storage)
 search = Search("changeme")
-
-
 
 
 def get_dir_size(path):
@@ -31,6 +28,12 @@ def get_dir_size(path):
             size += os.path.getsize(full_path)
 
     return size
+
+
+@app.route("/suggest")
+def suggest():
+
+    return json.dumps(search.suggest(request.args.get("prefix")))
 
 
 @app.route("/document/<doc_id>")
@@ -116,8 +119,10 @@ def search_route():
     size_max = request.json["size_max"]
     mime_types = request.json["mime_types"]
     must_match = request.json["must_match"]
+    directories = request.json["directories"]  # todo: make sure dir exists and is enabled
+    path = request.json["path"]
 
-    page = search.search(query, size_min, size_max, mime_types, must_match)
+    page = search.search(query, size_min, size_max, mime_types, must_match, directories, path)
 
     return json.dumps(page)
 

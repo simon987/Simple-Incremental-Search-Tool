@@ -68,7 +68,7 @@ class Indexer:
             "analysis": {"tokenizer": {"my_nGram_tokenizer": {"type": "nGram", "min_gram": 3, "max_gram": 3}}}},
             index=self.index_name)
         self.es.indices.put_settings(body={
-            "analysis": {"analyzer": {"path_analyser": {"tokenizer": "path_tokenizer"}}}},
+            "analysis": {"analyzer": {"path_analyser": {"tokenizer": "path_tokenizer", "filter": ["lowercase"]}}}},
             index=self.index_name)
         self.es.indices.put_settings(body={
             "analysis": {"analyzer": {"my_nGram": {"tokenizer": "my_nGram_tokenizer", "filter": ["lowercase",
@@ -80,7 +80,7 @@ class Indexer:
             "suggest-path": {"type": "completion", "analyzer": "keyword"},
             "mime": {"type": "text", "analyzer": "path_analyser", "copy_to": "mime_kw"},
             "mime_kw": {"type": "keyword"},
-            "directory": {"type": "keyword"},
+            "directory": {"type": "short"},
             "name": {"analyzer": "my_nGram", "type": "text"},
             "album": {"analyzer": "my_nGram", "type": "text"},
             "artist": {"analyzer": "my_nGram", "type": "text"},
