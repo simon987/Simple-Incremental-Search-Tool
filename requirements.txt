@@ -13,3 +13,4 @@ unicodedata2
 pdfminer.six
 ebooklib
 html2text
+docx2txt

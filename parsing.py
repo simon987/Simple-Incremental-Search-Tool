@@ -7,6 +7,7 @@ import json
 import chardet
 import html
 import warnings
+import docx2txt
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
 from pdfminer.pdfpage import PDFPage
@@ -377,7 +378,10 @@ class PdfFileParser(GenericFileParser):
             document = PDFDocument(parser)
 
             if len(document.info) > 0 and "Title" in document.info[0] and document.info[0]["Title"] != b"":
-                info["content"] += document.info[0]["Title"].decode("utf-8", "replace") + "\n"
+                if isinstance(document.info[0]["Title"], bytes):
+                    info["content"] += document.info[0]["Title"].decode("utf-8", "replace") + "\n"
+                else:
+                    info["content"] += document.info[0]["Title"].resolve().decode("utf-8", "replace") + "\n"
 
             try:
                 if document.is_extractable:
@@ -449,3 +453,26 @@ class EbookParser(GenericFileParser):
         return info
 
 
+class DocxParser(GenericFileParser):
+    is_default = False
+
+    def __init__(self, checksum_calculators: list, content_length: int):
+        super().__init__(checksum_calculators)
+
+        self.content_length = content_length
+
+        self.mime_types = [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ]
+
+    def parse(self, full_path: str):
+        info = super().parse(full_path)
+
+        text = docx2txt.process(full_path)
+
+        if len(text) < self.content_length:
+            info["content"] = text
+        else:
+            info["content"] = text[0:self.content_length]
+
+        return info
