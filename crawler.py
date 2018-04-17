@@ -5,7 +5,7 @@ from multiprocessing import Process, Value
 from apscheduler.schedulers.background import BackgroundScheduler
 from parsing import GenericFileParser, Md5CheckSumCalculator, ExtensionMimeGuesser, MediaFileParser, TextFileParser, \
     PictureFileParser, Sha1CheckSumCalculator, Sha256CheckSumCalculator, ContentMimeGuesser, MimeGuesser, FontParser, \
-    PdfFileParser, DocxParser
+    PdfFileParser, DocxParser, EbookParser
 from indexer import Indexer
 from search import Search
 from thumbnail import ThumbnailGenerator
@@ -77,7 +77,7 @@ class Crawler:
                 except FileNotFoundError:
                     continue  # File was deleted
 
-        if self.indexer is not None:
+        if self.indexer is not None and len(self.documents) > 0:
             self.indexer.index(self.documents, self.dir_id)
 
     def countFiles(self, root_dir: str):
@@ -141,7 +141,8 @@ class TaskManager:
                      PictureFileParser(chksum_calcs),
                      FontParser(chksum_calcs),
                      PdfFileParser(chksum_calcs, int(directory.get_option("TextFileContentLength"))),  # todo get content len from other opt
-                     DocxParser(chksum_calcs, int(directory.get_option("TextFileContentLength")))],  # todo get content len from other opt
+                     DocxParser(chksum_calcs, int(directory.get_option("TextFileContentLength"))),  # todo get content len from other opt
+                     EbookParser(chksum_calcs, int(directory.get_option("TextFileContentLength")))],  # todo get content len from other opt
                     mime_guesser, self.indexer, directory.id)
         c.crawl(directory.path, counter)
 

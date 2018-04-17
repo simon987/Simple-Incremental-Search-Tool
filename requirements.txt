@@ -16,3 +16,4 @@ html2text
 docx2txt
 xlrd
 six
+cairosvg

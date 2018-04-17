@@ -1,8 +1,8 @@
 from PIL import Image
 import os
-from parsing import ContentMimeGuesser, ExtensionMimeGuesser
 from multiprocessing import Value
 import ffmpeg
+import cairosvg
 
 
 class ThumbnailGenerator:
@@ -17,7 +17,16 @@ class ThumbnailGenerator:
         if mime is None:
             return
 
-        if mime.startswith("image"):
+        if mime == "image/svg+xml":
+
+            try:
+                cairosvg.svg2png(url=path, write_to="tmp")
+                self.generate_image("tmp", dest_path)
+                os.remove("tmp")
+            except Exception:
+                print("Couldn't make thumbnail for " + path)
+
+        elif mime.startswith("image"):
 
             try:
                 self.generate_image(path, dest_path)

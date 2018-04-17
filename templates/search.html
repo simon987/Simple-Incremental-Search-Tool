@@ -7,7 +7,7 @@
 {% block body %}
 
     <style>
-        body    {overflow-y:scroll;}
+        body {overflow-y:scroll;}
         .document {
             padding: 0.5rem;
         }
@@ -79,11 +79,15 @@
         .fit {
             width: 100%;
             height: 100%;
-        {#            margin-top: 3px;#}
             padding: 3px;
             min-width: 64px;
             max-width: 100%;
             max-height: 256px;
+        }
+
+        .audio-fit {
+            height: 39px;
+            vertical-align: bottom;
         }
 
         @media (min-width: 1200px) {
@@ -156,7 +160,6 @@
     <div class="container">
 
         <div class="card">
-            {#            <div class="card-header">An excellent form</div>#}
             <div class="card-body">
                 <div class="form-group">
                     <input id="pathBar" type="search" class="form-control" placeholder="Path">
@@ -190,8 +193,6 @@
                     <div class="col">
                         <label>Mime types</label>
 
-                        <button class="btn btn-xs btn-success" onclick="toggleTree()" style="float: right">Toggle</button>
-
                         <div class="tree"></div>
                     </div>
                 </div>
@@ -209,9 +210,20 @@
 
                     //Select all
                     tree.select();
+                    tree.node("any").deselect();
 
                     tree.on("node.click", function(event, node, handler) {
                         event.preventTreeDefault();
+
+                        if (node.id === "any") {
+
+                            if (!node.itree.state.checked) {
+                                tree.deselect();
+                            }
+                        } else {
+                            tree.node("any").deselect();
+                        }
+
                         handler();
                         searchQueued = true;
                     })
@@ -530,26 +542,27 @@
                             }
 
                             break;
-                        case "image":
-
-                            formatTag = document.createElement("span");
+                        case "image": {
+                            let formatTag = document.createElement("span");
                             formatTag.setAttribute("class", "badge badge-pill badge-image");
                             formatTag.appendChild(document.createTextNode(format));
                             tags.push(formatTag);
-
+                        }
                             break;
-                        case "audio":
-                            formatTag = document.createElement("span");
+                        case "audio": {
+                            let formatTag = document.createElement("span");
                             formatTag.setAttribute("class", "badge badge-pill badge-audio");
                             formatTag.appendChild(document.createTextNode(hit["_source"]["format_name"]));
                             tags.push(formatTag);
+                        }
 
                             break;
-                        case "text":
-                            formatTag = document.createElement("span");
+                        case "text": {
+                            let formatTag = document.createElement("span");
                             formatTag.setAttribute("class", "badge badge-pill badge-text");
                             formatTag.appendChild(document.createTextNode(hit["_source"]["encoding"]));
                             tags.push(formatTag);
+                        }
 
                             break;
                     }
@@ -563,17 +576,17 @@
                         docCard.appendChild(contentDiv);
                     }
 
-                    //Font_name
-                    if (hit.hasOwnProperty("highlight") && hit["highlight"].hasOwnProperty("font_name")) {
-                        let contentDiv = document.createElement("div");
-                        contentDiv.setAttribute("class", "content-div bg-light");
-                        contentDiv.insertAdjacentHTML('afterbegin', hit["highlight"]["font_name"][0]);
-                        docCard.appendChild(contentDiv);
-                    }
-
                     //Audio
-                    if (mimeCategory === "audio") {
-                        //TODO
+                    if (mimeCategory === "audio" && hit["_source"].hasOwnProperty("format_long_name")) {
+
+                        let audio = document.createElement("audio");
+                        audio.setAttribute("preload", "none");
+                        audio.setAttribute("class", "audio-fit fit");
+                        audio.setAttribute("controls", "");
+                        audio.setAttribute("type", hit["_source"]["mime"]);
+                        audio.setAttribute("src", "file/" + hit["_id"]);
+
+                        docCard.appendChild(audio)
                     }
 
                     if (thumbnail !== null) {
@@ -671,6 +684,11 @@
                 let selected = tree.selected();
 
                 for (let i = 0; i < selected.length; i++) {
+
+                    if(selected[i].id === "any") {
+                        return "any"
+                    }
+
                     //Only get children
                     if (selected[i].text.indexOf("(") !== -1) {
                         mimeTypes.push(selected[i].id);
@@ -734,7 +752,7 @@
                     postBody.mime_types = getSelectedMimeTypes();
                     postBody.must_match = must_match;
                     postBody.directories = selectedDirs;
-                    postBody.path = pathBar.value.replace(/\/$/, ""); //remove trailing slashes
+                    postBody.path = pathBar.value.replace(/\/$/, "").toLowerCase(); //remove trailing slashes
                     xhttp.setRequestHeader('content-type', 'application/json');
                     xhttp.send(JSON.stringify(postBody));
                 }

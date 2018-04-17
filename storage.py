@@ -278,14 +278,17 @@ class LocalStorage:
 
         self.dir_cache_outdated = True
 
-        conn = sqlite3.connect(self.db_path)
-        c = conn.cursor()
-        c.execute("UPDATE Directory SET name=?, path=?, enabled=? WHERE id=?",
-                  (directory.name, directory.path, directory.enabled, directory.id))
+        try:
+            conn = sqlite3.connect(self.db_path)
+            c = conn.cursor()
+            c.execute("UPDATE Directory SET name=?, path=?, enabled=? WHERE id=?",
+                      (directory.name, directory.path, directory.enabled, directory.id))
 
-        c.close()
-        conn.commit()
-        conn.close()
+            c.close()
+            conn.commit()
+            conn.close()
+        except sqlite3.IntegrityError:
+            raise DuplicateDirectoryException("Duplicate directory: " + directory.path)
 
     def save_option(self, option: Option):
 

@@ -67,7 +67,7 @@ def download(doc_id):
     extension = "" if doc["extension"] is None or doc["extension"] == "" else "." + doc["extension"]
     full_path = os.path.join(directory.path, doc["path"], doc["name"] + extension)
 
-    return send_file(full_path, mimetype=doc["mime"])
+    return send_file(full_path, mimetype=doc["mime"], conditional=True)
 
 
 @app.route("/thumb/<doc_id>")
@@ -195,9 +195,13 @@ def directory_update(dir_id):
     # Only name and enabled status can be updated
     updated_dir = Directory(path, enabled, directory.options, name)
     updated_dir.id = dir_id
-    storage.update_directory(updated_dir)
 
-    flash("<strong>Updated directory</strong>", "success")
+    try:
+        storage.update_directory(updated_dir)
+        flash("<strong>Updated directory</strong>", "success")
+
+    except DuplicateDirectoryException:
+        flash("<strong>Couldn't update directory</strong> Make sure that the path is unique", "danger")
 
     return redirect("/directory/" + str(dir_id))
 
