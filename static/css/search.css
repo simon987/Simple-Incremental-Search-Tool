@@ -1,0 +1,147 @@
+body {overflow-y:scroll;}
+.document {
+    padding: 0.5rem;
+}
+
+.document p {
+    margin-bottom: 0;
+}
+
+.document:hover p {
+    text-decoration: underline;
+}
+
+.badge-video {
+    color: #FFFFFF;
+    background-color: #F27761;
+}
+
+.badge-image {
+    color: #FFFFFF;
+    background-color: #AA99C9;
+}
+
+.badge-audio {
+    color: #FFFFFF;
+    background-color: #00ADEF;
+}
+
+.badge-resolution {
+    color: #212529;
+    background-color: #FFC107;
+}
+
+.badge-text {
+    color: #FFFFFF;
+    background-color: #FAAB3C;
+}
+
+.card-img-top {
+    display: block;
+    min-width: 64px;
+    max-width: 100%;
+    max-height: 256px;
+    width: unset;
+    margin: 0 auto 0;
+    padding: 3px 3px 0 3px;
+}
+
+.card-img-overlay {
+    pointer-events: none;
+    padding: 0.75rem;
+
+    bottom: 0;
+    top: unset;
+    left: unset;
+    right: unset;
+}
+
+.file-title {
+    font-size: 10pt;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.badge {
+    margin-right: 3px;
+}
+
+.fit {
+    width: 100%;
+    height: 100%;
+    padding: 3px;
+    min-width: 64px;
+    max-width: 100%;
+    max-height: 256px;
+}
+
+.audio-fit {
+    height: 39px;
+    vertical-align: bottom;
+}
+
+@media (min-width: 1200px) {
+    .card-columns {
+        column-count: 4;
+    }
+}
+
+@media (min-width: 1500px) {
+    .container  {
+        max-width: 1440px;
+    }
+    .card-columns {
+        column-count: 5;
+    }
+}
+
+.hl {
+    background: #fff217;
+}
+
+.content-div {
+    font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+    font-size: 13px;
+    padding: 1em;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin: 3px;
+}
+
+.irs-single, .irs-from, .irs-to {
+    font-size: 13px;
+}
+
+.irs-slider {
+    cursor: col-resize;
+}
+
+.custom-select {
+    overflow: auto;
+}
+
+.irs {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.inspire-tree .selected > .wholerow, .inspire-tree .selected > .title-wrap:hover + .wholerow
+{
+    background: none;
+}
+
+.inspire-tree {
+    font-weight: 400;
+    font-size: 14px;
+    font-family: Helvetica, Nueue, Verdana, sans-serif;
+    max-height: 450px;
+    overflow: auto;
+}
+
+.btn-xs {
+    padding: .1rem .3rem;
+    font-size: .875rem;
+    border-radius: .2rem;
+}

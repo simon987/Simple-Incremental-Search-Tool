@@ -181,17 +181,8 @@ class MediaFileParser(GenericFileParser):
 
             if "format" in metadata:
 
-                if "bit_rate" in metadata["format"]:
-                    info["bit_rate"] = int(metadata["format"]["bit_rate"])
-
-                if "nb_streams" in metadata["format"]:
-                    info["nb_streams"] = int(metadata["format"]["nb_streams"])
-
                 if "duration" in metadata["format"]:
                     info["duration"] = float(metadata["format"]["duration"])
-
-                if "format_name" in metadata["format"]:
-                    info["format_name"] = metadata["format"]["format_name"]
 
                 if "format_long_name" in metadata["format"]:
                     info["format_long_name"] = metadata["format"]["format_long_name"]
@@ -243,10 +234,10 @@ class PictureFileParser(GenericFileParser):
             with open(full_path, "rb") as image_file:
                 with Image.open(image_file) as image:
                     info["mode"] = image.mode
-                    info["format"] = image.format
+                    info["format_name"] = image.format
                     info["width"] = image.width
                     info["height"] = image.height
-        except (OSError, ValueError) as e:
+        except (OSError, ValueError):
             pass
 
         return info

@@ -57,7 +57,7 @@ class Search:
             "aggs": {
                 "mimeTypes": {
                     "terms": {
-                        "field": "mime_kw",
+                        "field": "mime",
                         "size": 10000
                     }
                 }

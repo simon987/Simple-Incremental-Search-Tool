@@ -13,7 +13,7 @@ class PictureFileParserTest(TestCase):
         self.assertEqual(info["mode"], "RGB")
         self.assertEqual(info["width"], 420)
         self.assertEqual(info["height"], 315)
-        self.assertEqual(info["format"], "JPEG")
+        self.assertEqual(info["format_name"], "JPEG")
 
     def test_parse_png(self):
 
@@ -24,7 +24,7 @@ class PictureFileParserTest(TestCase):
         self.assertEqual(info["mode"], "RGBA")
         self.assertEqual(info["width"], 288)
         self.assertEqual(info["height"], 64)
-        self.assertEqual(info["format"], "PNG")
+        self.assertEqual(info["format_name"], "PNG")
 
     def test_parse_gif(self):
 
@@ -35,7 +35,7 @@ class PictureFileParserTest(TestCase):
         self.assertEqual(info["mode"], "P")
         self.assertEqual(info["width"], 420)
         self.assertEqual(info["height"], 315)
-        self.assertEqual(info["format"], "GIF")
+        self.assertEqual(info["format_name"], "GIF")
 
     def test_parse_bmp(self):
 
@@ -46,4 +46,4 @@ class PictureFileParserTest(TestCase):
         self.assertEqual(info["mode"], "RGB")
         self.assertEqual(info["width"], 150)
         self.assertEqual(info["height"], 200)
-        self.assertEqual(info["format"], "BMP")
+        self.assertEqual(info["format_name"], "BMP")

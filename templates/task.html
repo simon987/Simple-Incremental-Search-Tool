@@ -74,8 +74,8 @@
                             return;
                         }
 
-                        var currentTask = JSON.parse(this.responseText);
-                        var percent = currentTask.parsed / currentTask.total * 100;
+                        let currentTask = JSON.parse(this.responseText);
+                        let percent = currentTask.parsed / currentTask.total * 100;
 
                         try {
 
@@ -84,7 +84,7 @@
                                 document.getElementById("task-label-" + currentTask.id).innerHTML = "Calculating file count...";
 
                             } else {
-                                var bar = document.getElementById("task-bar-" + currentTask.id);
+                                let bar = document.getElementById("task-bar-" + currentTask.id);
                                 bar.setAttribute("style", "width: " + percent + "%;");
                                 document.getElementById("task-label-" + currentTask.id).innerHTML = currentTask.parsed + " / " + currentTask.total + "  (" + percent.toFixed(2) + "%)";
 
@@ -92,8 +92,6 @@
                                     bar.classList.add("bg-success")
                                 }
                             }
-
-
 
                         } catch (e) {
                             window.reload();

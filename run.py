@@ -263,13 +263,6 @@ def get_current_task():
         return ""
 
 
-@app.route("/task/current/cancel")
-def cancel_current_task():
-
-    tm.cancel_task()
-    return redirect("/task")
-
-
 @app.route("/task/add")
 def task_add():
     type = request.args.get("type")
@@ -283,6 +276,9 @@ def task_add():
 @app.route("/task/<int:task_id>/del")
 def task_del(task_id):
     storage.del_task(task_id)
+
+    if tm.current_task is not None and task_id == tm.current_task.task.id:
+        tm.cancel_task()
 
     return redirect("/task")
 

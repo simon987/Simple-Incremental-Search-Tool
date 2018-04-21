@@ -37,12 +37,13 @@ class ThumbnailGenerator:
             try:
                 (ffmpeg.
                  input(path)
-                 .overwrite_output("tmp", vframes=1, f="image2", loglevel="error")
+                 .output("tmp", vframes=1, f="image2", loglevel="error")
                  .run()
                  )
                 self.generate_image("tmp", dest_path)
                 os.remove("tmp")
             except Exception as e:
+                print(e)
                 print("Couldn't make thumbnail for " + path)
 
     def generate_all(self, docs, dest_path,  counter: Value=None):

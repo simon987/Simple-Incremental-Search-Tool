@@ -8,7 +8,7 @@ import config
 class CheckSumCalculator:
 
     def checksum(self, string: str):
-        return flask_bcrypt.generate_password_hash(string, 14)  # todo load from config
+        return flask_bcrypt.generate_password_hash(string, config.bcrypt_rounds)
 
 
 class DuplicateDirectoryException(Exception):

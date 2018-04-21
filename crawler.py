@@ -12,6 +12,7 @@ from thumbnail import ThumbnailGenerator
 from storage import Directory
 import shutil
 import config
+from ctypes import c_char_p
 
 
 class RunningTask:
@@ -166,20 +167,19 @@ class TaskManager:
         done.value = 1
 
     def cancel_task(self):
-        self.current_task = None
-        self.current_process.terminate()
+        self.current_task.done.value = 1
 
     def check_new_task(self):
 
         if self.current_task is None:
             for i in sorted(self.storage.tasks(), reverse=True):
-                if not self.storage.tasks()[i].completed:
-                    self.start_task(self.storage.tasks()[i])
+                self.start_task(self.storage.tasks()[i])
         else:
             if self.current_task.done.value == 1:
 
                 self.current_process.terminate()
                 self.storage.del_task(self.current_task.task.id)
                 self.current_task = None
+
 
 

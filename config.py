@@ -8,9 +8,10 @@ default_options = {
     "EbookContentLength": "2000",
     "MimeGuesser": "extension",  # extension, content
     "CheckSumCalculators": "",  # md5, sha1, sha256
-    "FileParsers": "media, text, picture, font"  # media, text, picture
+    "FileParsers": "media, text, picture, font, pdf, docx, spreadsheet, ebook"
 }
 
 index_every = 10000
 nGramMin = 3
 nGramMax = 3
+bcrypt_rounds = 14
