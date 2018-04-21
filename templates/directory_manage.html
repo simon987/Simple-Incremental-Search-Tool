@@ -98,49 +98,13 @@
                         <th>Thumbnail cache size</th>
                         <td><pre>{{ tn_size_formatted }} ({{ tn_size }} bytes)</pre></td>
                     </tr>
-
-                    <tr>
-                        <th>Index size</th>
-                        <td><pre>{{ index_size_formatted }} ({{ index_size }} bytes)</pre></td>
-                    </tr>
-
-                    <tr>
-                        <th>Document count</th>
-                        <td><pre>{{ doc_count }}</pre></td>
-                    </tr>
                 </table>
             </div>
 
         </div>
 
         <div class="card">
-            <div class="card-header">An excellent option list</div>
-            <div class="card-body">
-                <table class="info-table table-striped table-hover">
-                    <thead>
-                    <tr>
-                        <th>Option</th>
-                        <th>Value</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for option in directory.options %}
-
-                        <tr>
-                            <td style="width: 30%"><span>{{ option.key }}</span></td>
-                            <td onclick="modifyVal({{ option.id }}, '{{ option.key }}')" title="Click to update"><pre id="val-{{ option.id }}">{{ option.value }}</pre></td>
-                        </tr>
-
-                    {% endfor %}
-
-                    </tbody>
-                </table>
-
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">An excellent control panel</div>
+            <div class="card-header">Actions</div>
             <div class="card-body">
 
                 <div class="d-flex">
@@ -171,6 +135,33 @@
                     </div>
                 </div>
 
+
+            </div>
+        </div>
+
+        <div class="card">
+            {# TODO: put github wiki link #}
+            <div class="card-header">Options <a href="#" style="float:right">Learn more <i class="fas fa-external-link-alt"></i></a></div>
+            <div class="card-body">
+                <table class="info-table table-striped table-hover">
+                    <thead>
+                    <tr>
+                        <th>Option</th>
+                        <th>Value</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for option in directory.options %}
+
+                        <tr>
+                            <td style="width: 30%"><span>{{ option.key }}</span></td>
+                            <td onclick="modifyVal({{ option.id }}, '{{ option.key }}')" title="Click to update"><pre id="val-{{ option.id }}">{{ option.value }}</pre></td>
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+                </table>
 
             </div>
         </div>

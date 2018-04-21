@@ -4,6 +4,8 @@ from storage import LocalStorage, DuplicateDirectoryException
 from crawler import RunningTask, TaskManager
 import json
 import os
+import shutil
+import config
 import humanfriendly
 from search import Search
 from PIL import Image
@@ -11,7 +13,7 @@ from io import BytesIO
 
 app = Flask(__name__)
 app.secret_key = "A very secret key"
-storage = LocalStorage("local_storage.db")
+storage = LocalStorage(config.db_path)
 
 tm = TaskManager(storage)
 search = Search("changeme")
@@ -56,7 +58,10 @@ def file(doc_id):
     extension = "" if doc["extension"] is None or doc["extension"] == "" else "." + doc["extension"]
     full_path = os.path.join(directory.path, doc["path"], doc["name"] + extension)
 
-    return send_file(full_path, mimetype=doc["mime"], as_attachment=True, attachment_filename=doc["name"])
+    if not os.path.exists(full_path):
+        return abort(404)
+
+    return send_file(full_path, mimetype=doc["mime"], as_attachment=True, attachment_filename=doc["name"] + extension)
 
 
 @app.route("/file/<doc_id>")
@@ -66,6 +71,9 @@ def download(doc_id):
     directory = storage.dirs()[doc["directory"]]
     extension = "" if doc["extension"] is None or doc["extension"] == "" else "." + doc["extension"]
     full_path = os.path.join(directory.path, doc["path"], doc["name"] + extension)
+
+    if not os.path.exists(full_path):
+        return abort(404)
 
     return send_file(full_path, mimetype=doc["mime"], conditional=True)
 
@@ -170,12 +178,8 @@ def directory_manage(dir_id):
     tn_size = get_dir_size("static/thumbnails/" + str(dir_id))
     tn_size_formatted = humanfriendly.format_size(tn_size)
 
-    index_size = search.get_index_size()
-    index_size_formatted = humanfriendly.format_size(index_size)
-
     return render_template("directory_manage.html", directory=directory, tn_size=tn_size,
-                           tn_size_formatted=tn_size_formatted, index_size=index_size,
-                           index_size_formatted=index_size_formatted, doc_count=search.get_doc_count())
+                           tn_size_formatted=tn_size_formatted)
 
 
 @app.route("/directory/<int:dir_id>/update")
@@ -242,6 +246,8 @@ def directory_reset(dir_id):
 
     storage.dir_cache_outdated = True
 
+    search.delete_directory(dir_id)
+
     flash("<strong>Reset directory options to default settings</strong>", "success")
     return redirect("directory/" + str(dir_id))
 
@@ -283,10 +289,39 @@ def task_del(task_id):
     return redirect("/task")
 
 
+@app.route("/reset_es")
+def reset_es():
+
+    flash("Elasticsearch index has been reset. Modifications made in <b>config.py</b> have been applied.", "success")
+
+    tm.indexer.init()
+    if os.path.exists("static/thumbnails"):
+        shutil.rmtree("static/thumbnails")
+
+    return redirect("/dashboard")
+
+
 @app.route("/dashboard")
 def dashboard():
 
-    return render_template("dashboard.html")
+    tn_sizes = {}
+    tn_size_total = 0
+    for directory in storage.dirs():
+        tn_size = get_dir_size("static/thumbnails/" + str(directory))
+        tn_size_formatted = humanfriendly.format_size(tn_size)
+
+        tn_sizes[directory] = tn_size_formatted
+        tn_size_total += tn_size
+
+    tn_size_total_formatted = humanfriendly.format_size(tn_size_total)
+
+    return render_template("dashboard.html", version=config.VERSION, tn_sizes=tn_sizes,
+                           tn_size_total=tn_size_total_formatted,
+                           doc_size=humanfriendly.format_size(search.get_doc_size()),
+                           doc_count=search.get_doc_count(),
+                           db_path=config.db_path,
+                           elasticsearch_url=config.elasticsearch_url,
+                           index_size=humanfriendly.format_size(search.get_index_size()))
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ import elasticsearch
 from threading import Thread
 import subprocess
 import requests
+import config
 
 
 class Indexer:
@@ -22,8 +23,13 @@ class Indexer:
             t.daemon = True
             t.start()
 
-            time.sleep(10)
-            self.init()
+            time.sleep(15)
+
+            try:
+                requests.head("http://localhost:9200")
+            except requests.exceptions.ConnectionError:
+                print("First time setup...")
+                self.init()
 
     @staticmethod
     def run_elasticsearch():
@@ -65,7 +71,7 @@ class Indexer:
             "analysis": {"tokenizer": {"path_tokenizer": {"type": "path_hierarchy"}}}},
             index=self.index_name)
         self.es.indices.put_settings(body={
-            "analysis": {"tokenizer": {"my_nGram_tokenizer": {"type": "nGram", "min_gram": 3, "max_gram": 3}}}},
+            "analysis": {"tokenizer": {"my_nGram_tokenizer": {"type": "nGram", "min_gram": config.nGramMin, "max_gram": config.nGramMax}}}},
             index=self.index_name)
         self.es.indices.put_settings(body={
             "analysis": {"analyzer": {"path_analyser": {"tokenizer": "path_tokenizer", "filter": ["lowercase"]}}}},

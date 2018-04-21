@@ -271,7 +271,7 @@ class TextFileParser(GenericFileParser):
             "text/x-bibtex", "text/x-tcl", "text/x-c++", "text/x-shellscript", "text/x-msdos-batch",
             "text/x-makefile", "text/rtf", "text/x-objective-c", "text/troff", "text/x-m4",
             "text/x-lisp", "text/x-php", "text/x-gawk", "text/x-awk", "text/x-ruby", "text/x-po",
-            "text/x-makefile"
+            "text/x-makefile", "application/javascript"
         ]
 
     def parse(self, full_path: str):

@@ -3,229 +3,68 @@
 
 {% block body %}
 
-    <div class="container-fluid">
-    <div class="row">
-        <div class="col-sm-3">
-            <div class="chart-wrapper">
-                <div class="chart-title">FSE Info</div>
-                <div class="chart-stage">
-                    <table class="info-table">
-                        <tr>
-                            <th>Version</th>
-                            <td><pre>1.0a</pre></td>
-                        </tr>
-                        <tr>
-                            <th>Total thumbnail size</th>
-                            <td><pre>652.08 Mb</pre></td>
-                        </tr>
-                        <tr>
-                            <th>Total document count</th>
-                            <td><pre>1258902</pre></td>
-                        </tr>
-                        <tr>
-                            <th>Total document size</th>
-                            <td><pre>4.7 TB</pre></td>
-                        </tr>
-                        <tr>
-                            <th>Folder count</th>
-                            <td><pre>4</pre></td>
-                        </tr>
-                        <tr>
-                            <th>User count</th>
-                            <td><pre>1</pre></td>
-                        </tr>
-
-                        <tr>
-                            <th>SQLite database path</th>
-                            <td>./local_storage.db</td>
-                        </tr>
-                    </table>
-                </div>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">FSE Information</div>
+            <div class="card-body">
+                <table class="info-table table-hover table-striped">
+                    <tbody>
+                    <tr>
+                        <th>Version</th>
+                        <td><pre>{{ version }}</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Total thumbnail cache size</th>
+                        <td><pre>{{ tn_size_total }}</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Total document count</th>
+                        <td><pre>{{ doc_count }}</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Total size of indexed documents</th>
+                        <td><pre>{{ doc_size }}</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Total index size</th>
+                        <td><pre>{{ index_size }}</pre></td>
+                    </tr>
+                    <tr>
+                        <th>User count</th>
+                        <td><pre>1</pre></td>
+                    </tr>
+                    <tr>
+                        <th>SQLite database path</th>
+                        <td><pre>{{ db_path }}</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Elasticsearch URL</th>
+                        <td><pre>{{ elasticsearch_url }}</pre></td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <div class="chart-wrapper">
-                <div class="chart-title">Elasticsearch info</div>
-                <div class="chart-stage">
-                    <table class="info-table">
-                        <tr>
-                            <th>Total index size</th>
-                            <td><pre>3.7 GB</pre></td>
-                        </tr>
-                        <tr>
-                            <th>HTTP port</th>
-                            <td><pre>9200</pre></td>
-                        </tr>
-                        <tr>
-                            <th>Version</th>
-                            <td><pre>6.2.1</pre></td>
-                        </tr>
-                        <tr>
-                            <th>Lucene version</th>
-                            <td><pre>7.2.1</pre></td>
-                        </tr>
-                        <tr>
-                            <th>Path</th>
-                            <td><pre>./elasticsearch/</pre></td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-
+            <div class="card-footer text-muted">Change global settings in <b>config.py</b></div>
         </div>
-        <div class="col-sm-9">
-            <div class="row">
-                <div class="col-sm-12">
-                    <div class="chart-wrapper">
-                        <div class="chart-title">Thumbnail cache size</div>
-                        <div class="chart-stage">
-                            <script>
-                                window.chartColors = {
-                                    red: 'rgb(255, 99, 132)',
-                                    orange: 'rgb(255, 159, 64)',
-                                    yellow: 'rgb(255, 205, 86)',
-                                    green: 'rgb(75, 192, 192)',
-                                    blue: 'rgb(54, 162, 235)',
-                                    purple: 'rgb(153, 102, 255)',
-                                    grey: 'rgb(201, 203, 207)'
-                                };
 
-                                var color = Chart.helpers.color;
-
-                                var barChartData = {
-                                    labels: ["Music: 12.08 MB", "Pictures: 560.8 MB", "Movies: 78.9 MB", "Documents: 1 MB"],
-                                    datasets: [{
-                                        label: 'Size',
-                                        backgroundColor: color("#8f2aa3").alpha(0.6).rgbString(),
-                                        borderColor: "#8f2aa3",
-                                        borderWidth: 1,
-                                        data: [
-                                            12080500,
-                                            560805400,
-                                            78898000,
-                                            1024000
-                                        ]
-                                    }]
-
-                                };
-                            </script>
-                            <canvas id="canvas"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-12">
-                    <div class="chart-wrapper">
-                        <div class="chart-title">Document size</div>
-                        <div class="chart-stage">
-                            <script>
-
-                                var color = Chart.helpers.color;
-                                var barChartData2 = {
-                                    labels: ["Music: 192.5 GB", "Pictures: 1.30 TB", "Movies: 3.73 TB", "Documents: 42.7 GB"],
-                                    datasets: [{
-                                        label: 'Size',
-                                        backgroundColor: color("#f4b80c").alpha(0.6).rgbString(),
-                                        borderColor: "#f4b80c",
-                                        borderWidth: 1,
-                                        data: [
-                                            192500000000,
-                                            1300000000000,
-                                            3730000000000,
-                                            42700000000
-                                        ]
-                                    }]
-
-                                };
-                            </script>
-
-                            <canvas id="docSizeChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-12">
-                    <div class="chart-wrapper">
-                        <div class="chart-title">Document count</div>
-                        <div class="chart-stage"> {# todo padding 8px 10px 5px 10px  #}
-                            <script>
-                                var color = Chart.helpers.color;
-                                var barChartData3 = {
-                                    labels: ["Music", "Pictures", "Movies", "Documents"],
-                                    datasets: [{
-                                        label: 'Count',
-                                        backgroundColor: color("#f4225a").alpha(0.6).rgbString(),
-                                        borderColor: "#f4225a",
-                                        borderWidth: 1,
-                                        data: [
-                                            6790,
-                                            758652,
-                                            1289,
-                                            11589632
-                                        ]
-                                    }]
-
-                                };
-
-                                window.onload = function() {
-                                    var ctx = document.getElementById("canvas").getContext("2d");
-                                    ctx.canvas.height = 50;
-
-                                    new Chart(ctx, {
-                                        type: 'bar',
-                                        data: barChartData,
-                                        options: {
-                                            legend: {
-                                                position: 'hidden'
-                                            },
-                                            title: {
-                                                display: false
-                                            }
-                                        }
-                                    });
-
-                                    ctx = document.getElementById("docSizeChart").getContext("2d");
-                                    ctx.canvas.height = 50;
-
-                                    new Chart(ctx, {
-                                        type: 'bar',
-                                        data: barChartData2,
-                                        options: {
-                                            legend: {
-                                                position: 'hidden'
-                                            },
-                                            title: {
-                                                display: false
-                                            }
-                                        }
-                                    });
-
-                                    ctx = document.getElementById("docCountChart").getContext("2d");
-                                    ctx.canvas.height = 50;
-
-                                    new Chart(ctx, {
-                                        type: 'bar',
-                                        data: barChartData3,
-                                        options: {
-                                            legend: {
-                                                position: 'hidden'
-                                            },
-                                            title: {
-                                                display: false
-                                            }
-                                        }
-                                    });
-
-                                };
-                            </script>
-                            <canvas id="docCountChart"></canvas>
-                        </div>
-                    </div>
-                </div>
+        <div class="card">
+            <div class="card-header">Actions</div>
+            <div class="card-body">
+                <button class="btn btn-danger" onclick="resetAll()">
+                    <i class="fas fa-exclamation-triangle"></i> Reset elasticsearch index
+                </button>
             </div>
         </div>
     </div>
-</div>
+
+    <script>
+        function resetAll() {
+            if (confirm("This will entirely reset the index and documents will need to be re-indexed.\n\n" +
+                    "Do you want to proceed?")) {
+                window.location = "/reset_es"
+            }
+        }
+    </script>
 
 {% endblock body %}

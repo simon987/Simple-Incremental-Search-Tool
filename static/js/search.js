@@ -1,6 +1,5 @@
 let searchBar = document.getElementById("searchBar");
 let pathBar = document.getElementById("pathBar");
-let must_match = true;
 let scroll_id = null;
 let docCount = 0;
 let searchQueued = false;
@@ -8,7 +7,6 @@ let coolingDown = false;
 let selectedDirs = [];
 
 function toggleSearchBar() {
-    must_match = !must_match;
     searchQueued = true;
 }
 
@@ -117,6 +115,21 @@ function humanFileSize(bytes) {
     return bytes.toFixed(1) + ' ' + units[u];
 }
 
+/**
+ * https://stackoverflow.com/questions/6312993
+ */
+function humanTime (sec_num) {
+    sec_num = Math.floor(sec_num);
+    let hours   = Math.floor(sec_num / 3600);
+    let minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+    let seconds = sec_num - (hours * 3600) - (minutes * 60);
+
+    if (hours   < 10) {hours   = "0" + hours;}
+    if (minutes < 10) {minutes = "0" + minutes;}
+    if (seconds < 10) {seconds = "0" + seconds;}
+    return hours + ":" + minutes + ":" + seconds;
+}
+
 
 function initPopover() {
     $('[data-toggle="popover"]').popover({
@@ -146,7 +159,7 @@ function gifOver(thumbnail, documentId) {
                 //Load gif
                 thumbnail.setAttribute("src", "/file/" + documentId);
             }
-        }, 750); //todo grab hover time from config
+        }, 750);
 
     });
 
@@ -156,43 +169,6 @@ function gifOver(thumbnail, documentId) {
         thumbnail.setAttribute("src", "/thumb/" + documentId);
 
     })
-}
-
-function videoOver(thumbnail, imgWrapper, thumbnailOverlay, documentId, docCard) {
-
-    docCard.addEventListener("focus", function () {
-        let callee = arguments.callee;
-        docCard.mouseStayedOver = true;
-
-        window.setTimeout(function() {
-
-            if(docCard.mouseStayedOver) {
-                docCard.removeEventListener('focus', callee, false);
-
-                imgWrapper.removeChild(thumbnail);
-                imgWrapper.removeChild(thumbnailOverlay);
-
-                let video = document.createElement("video");
-                let vidSource = document.createElement("source");
-                vidSource.setAttribute("src", "/file/" + documentId);
-                vidSource.setAttribute("type", "video/webm");
-                video.appendChild(vidSource);
-                video.setAttribute("class", "fit");
-                video.setAttribute("loop", "");
-                video.setAttribute("controls", "");
-                video.setAttribute("preload", "");
-                video.setAttribute("poster", "/thumb/" + documentId);
-                imgWrapper.appendChild(video);
-
-                video.addEventListener("dblclick", function() {
-                    video.webkitRequestFullScreen();
-                })
-            }
-        }, 750);
-    });
-    docCard.addEventListener("blur", function() {
-        docCard.mouseStayedOver = false;
-    });
 }
 
 function downloadPopover(element, documentId) {
@@ -254,9 +230,24 @@ function createDocCard(hit) {
         switch (mimeCategory) {
 
             case "video":
+                thumbnail = document.createElement("video");
+                let vidSource = document.createElement("source");
+                vidSource.setAttribute("src", "/file/" + hit["_id"]);
+                vidSource.setAttribute("type", "video/webm");
+                thumbnail.appendChild(vidSource);
+                thumbnail.setAttribute("class", "fit");
+                thumbnail.setAttribute("loop", "");
+                thumbnail.setAttribute("controls", "");
+                thumbnail.setAttribute("preload", "none");
+                thumbnail.setAttribute("poster", "/thumb/" + hit["_id"]);
+                thumbnail.addEventListener("dblclick", function() {
+                    thumbnail.webkitRequestFullScreen();
+                });
+
+                break;
             case "image":
                 thumbnail = document.createElement("img");
-                thumbnail.setAttribute("class", "card-img-top");
+                thumbnail.setAttribute("class", "card-img-top fit");
                 thumbnail.setAttribute("src", "/thumb/" + hit["_id"]);
                 break;
         }
@@ -291,11 +282,8 @@ function createDocCard(hit) {
                 //Duration
                 let durationBadge = document.createElement("span");
                 durationBadge.setAttribute("class", "badge badge-resolution");
-                durationBadge.appendChild(document.createTextNode(parseFloat(hit["_source"]["duration"]).toFixed(2) + "s"));
+                durationBadge.appendChild(document.createTextNode(humanTime(hit["_source"]["duration"])));
                 thumbnailOverlay.appendChild(durationBadge);
-
-                //Hover
-                videoOver(thumbnail, imgWrapper, thumbnailOverlay, hit["_id"], docCard)
 
         }
 
@@ -522,7 +510,7 @@ function search() {
         postBody.size_min = size_min;
         postBody.size_max = size_max;
         postBody.mime_types = getSelectedMimeTypes();
-        postBody.must_match = must_match;
+        postBody.must_match = document.getElementById("barToggle").checked;
         postBody.directories = selectedDirs;
         postBody.path = pathBar.value.replace(/\/$/, "").toLowerCase(); //remove trailing slashes
         xhttp.setRequestHeader('content-type', 'application/json');
@@ -539,7 +527,7 @@ searchBar.addEventListener("keyup", function () {
 });
 
 //Size slider
-let sizeSlider = $("#sizeSlider").ionRangeSlider({
+$("#sizeSlider").ionRangeSlider({
     type: "double",
     grid: false,
     force_edges: true,
@@ -569,7 +557,7 @@ let sizeSlider = $("#sizeSlider").ionRangeSlider({
 
         searchQueued = true;
     }
-})[0];
+});
 
 //Directories select
 function updateDirectories() {
@@ -600,5 +588,8 @@ function getPathChoices() {
     });
 }
 
+document.getElementById("pathBar").addEventListener("keyup", function () {
+    searchQueued = true;
+});
 
 window.setInterval(search, 75);

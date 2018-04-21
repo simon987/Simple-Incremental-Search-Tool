@@ -112,7 +112,13 @@
                 {% for task_id in tasks | sort() %}
                     <div class="task-wrapper container-fluid">
                         <a class="task-name" href="/directory/{{ tasks[task_id].dir_id }}">{{ directories[tasks[task_id].dir_id].name }}</a>
-                        <span class="task-info"> - {{ tasks[task_id].type }}</span>
+                        <span class="task-info"> -
+                            {% if tasks[task_id].type == 1 %}
+                            Indexing
+                            {% else %}
+                            Thumbnail generation
+                            {% endif %}
+                        </span>
 
                         <div class="d-flex p-2">
                             <div class="container-fluid p-2">

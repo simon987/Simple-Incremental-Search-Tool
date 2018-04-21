@@ -2,6 +2,7 @@ import json
 import os
 import elasticsearch
 import requests
+import config
 from elasticsearch import helpers
 
 
@@ -12,7 +13,7 @@ class Search:
         self.es = elasticsearch.Elasticsearch()
 
         try:
-            requests.head("http://localhost:9200")
+            requests.head(config.elasticsearch_url)
             print("elasticsearch is already running")
         except:
             print("elasticsearch is not running")
@@ -35,7 +36,7 @@ class Search:
 
                 parsed_info = json.loads(info.text)
 
-                return int(parsed_info["indices"][self.index_name]["primaries"]["store"]["size_in_bytes"])
+                return int(parsed_info["indices"][self.index_name]["total"]["store"]["size_in_bytes"])
         except:
             return 0
 
@@ -47,7 +48,23 @@ class Search:
             if info.status_code == 200:
                 parsed_info = json.loads(info.text)
 
-                return int(parsed_info["indices"][self.index_name]["primaries"]["indexing"]["index_total"])
+                return int(parsed_info["indices"][self.index_name]["total"]["docs"]["count"])
+        except:
+            return 0
+
+    def get_doc_size(self):
+
+        try:
+            query = self.es.search(body={
+                "aggs": {
+                    "total_size": {
+                        "sum": {"field": "size"}
+                    }
+                }
+            })
+
+            return query["aggregations"]["total_size"]["value"]
+
         except:
             return 0
 
@@ -93,7 +110,6 @@ class Search:
     def search(self, query, size_min, size_max, mime_types, must_match, directories, path):
 
         condition = "must" if must_match else "should"
-        print(directories)
 
         filters = [
             {"range": {"size": {"gte": size_min, "lte": size_max}}},
@@ -171,3 +187,16 @@ class Search:
             return self.es.get(index=self.index_name, id=doc_id, doc_type="file")
         except elasticsearch.exceptions.NotFoundError:
             return None
+
+    def delete_directory(self, dir_id):
+
+        try:
+            self.es.delete_by_query(body={"query": {
+                "bool": {
+                    "filter": {"term": {"directory": dir_id}}
+                }
+            }}, index=self.index_name)
+        except elasticsearch.exceptions.ConflictError:
+            print("Error: multiple delete tasks at the same time")
+
+
