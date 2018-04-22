@@ -29,7 +29,9 @@ class MimeGuesser:
 
 
 class ContentMimeGuesser(MimeGuesser):
+
     def __init__(self):
+        import magic
         self.libmagic = magic.Magic(mime=True)
 
     def guess_mime(self, full_path):

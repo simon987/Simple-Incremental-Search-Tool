@@ -1,6 +1,5 @@
 import json
 import elasticsearch
-from elasticsearch.exceptions import TransportError
 from threading import Thread
 import subprocess
 import requests
@@ -34,7 +33,7 @@ class Indexer:
 
     @staticmethod
     def run_elasticsearch():
-	
+
         if platform.system() == "Windows":
             subprocess.Popen(["elasticsearch\\bin\\elasticsearch.bat"])
         else:
