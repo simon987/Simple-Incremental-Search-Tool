@@ -6,7 +6,7 @@ class PictureFileParserTest(TestCase):
 
     def test_parse_jpg(self):
 
-        parser = PictureFileParser([])
+        parser = PictureFileParser([], "test_files/")
 
         info = parser.parse("test_folder/sample_1.jpg")
 
@@ -17,7 +17,7 @@ class PictureFileParserTest(TestCase):
 
     def test_parse_png(self):
 
-        parser = PictureFileParser([])
+        parser = PictureFileParser([], "test_files/")
 
         info = parser.parse("test_folder/sample_5.png")
 
@@ -28,7 +28,7 @@ class PictureFileParserTest(TestCase):
 
     def test_parse_gif(self):
 
-        parser = PictureFileParser([])
+        parser = PictureFileParser([], "test_files/")
 
         info = parser.parse("test_folder/sample_6.gif")
 
@@ -39,7 +39,7 @@ class PictureFileParserTest(TestCase):
 
     def test_parse_bmp(self):
 
-        parser = PictureFileParser([])
+        parser = PictureFileParser([], "test_files/")
 
         info = parser.parse("test_folder/sample_7.bmp")
 

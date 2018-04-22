@@ -9,7 +9,7 @@ import html
 import warnings
 import docx2txt
 import xlrd
-from pdfminer.pdfparser import PDFParser
+from pdfminer.pdfparser import PDFParser, PDFSyntaxError
 from pdfminer.pdfdocument import PDFDocument
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
@@ -124,8 +124,9 @@ class GenericFileParser(FileParser):
     mime_types = []
     is_default = True
 
-    def __init__(self, checksum_calculators: list):
+    def __init__(self, checksum_calculators: list, root_dir: str):
         self.checksum_calculators = checksum_calculators
+        self.root_dir = root_dir
 
     def parse(self, full_path: str) -> dict:
         """
@@ -141,7 +142,7 @@ class GenericFileParser(FileParser):
         name, extension = os.path.splitext(name)
 
         info["size"] = file_stat.st_size
-        info["path"] = path  # todo save relative path
+        info["path"] = os.path.relpath(path, self.root_dir)
         info["name"] = name
         info["extension"] = extension[1:]
         info["mtime"] = file_stat.st_mtime
@@ -156,8 +157,8 @@ class MediaFileParser(GenericFileParser):
     is_default = False
     relevant_properties = ["bit_rate", "nb_streams", "duration", "format_name", "format_long_name"]
 
-    def __init__(self, checksum_calculators: list):
-        super().__init__(checksum_calculators)
+    def __init__(self, checksum_calculators: list, root_dir):
+        super().__init__(checksum_calculators, root_dir)
 
         self.mime_types = [
             "video/3gpp", "video/mp4", "video/mpeg", "video/ogg", "video/quicktime",
@@ -207,8 +208,8 @@ class MediaFileParser(GenericFileParser):
 class PictureFileParser(GenericFileParser):
     is_default = False
 
-    def __init__(self, checksum_calculators: list):
-        super().__init__(checksum_calculators)
+    def __init__(self, checksum_calculators: list, root_dir):
+        super().__init__(checksum_calculators, root_dir)
 
         self.mime_types = [
             "image/bmp", "image/cgm", "image/cis-cod", "image/g3fax", "image/gif",
@@ -246,8 +247,8 @@ class PictureFileParser(GenericFileParser):
 class TextFileParser(GenericFileParser):
     is_default = False
 
-    def __init__(self, checksum_calculators: list, content_length: int):
-        super().__init__(checksum_calculators)
+    def __init__(self, checksum_calculators: list, content_length: int, root_dir):
+        super().__init__(checksum_calculators, root_dir)
         self.content_length = content_length
 
         self.mime_types = [
@@ -271,7 +272,7 @@ class TextFileParser(GenericFileParser):
             "text/x-bibtex", "text/x-tcl", "text/x-c++", "text/x-shellscript", "text/x-msdos-batch",
             "text/x-makefile", "text/rtf", "text/x-objective-c", "text/troff", "text/x-m4",
             "text/x-lisp", "text/x-php", "text/x-gawk", "text/x-awk", "text/x-ruby", "text/x-po",
-            "text/x-makefile", "application/javascript"
+            "text/x-makefile", "application/javascript", "application/rtf"
         ]
 
     def parse(self, full_path: str):
@@ -298,8 +299,8 @@ class TextFileParser(GenericFileParser):
 class FontParser(GenericFileParser):
     is_default = False
 
-    def __init__(self, checksum_calculators: list):
-        super().__init__(checksum_calculators)
+    def __init__(self, checksum_calculators: list, root_dir):
+        super().__init__(checksum_calculators, root_dir)
 
         self.mime_types = [
             "application/font-sfnt", "application/font-woff", "application/vdn.ms-fontobject",
@@ -336,8 +337,8 @@ class FontParser(GenericFileParser):
 class PdfFileParser(GenericFileParser):
     is_default = False
 
-    def __init__(self, checksum_calculators: list, content_length: int):
-        super().__init__(checksum_calculators)
+    def __init__(self, checksum_calculators: list, content_length: int, root_dir):
+        super().__init__(checksum_calculators, root_dir)
 
         self.content_length = content_length
 
@@ -351,11 +352,14 @@ class PdfFileParser(GenericFileParser):
         if self.content_length > 0:
             with open(full_path, "rb") as f:
 
+                try:
+                    parser = PDFParser(f)
+                    document = PDFDocument(parser)
+                except PDFSyntaxError:
+                    print("couldn't parse PDF " + full_path)
+                    return info
+
                 info["content"] = ""
-
-                parser = PDFParser(f)
-                document = PDFDocument(parser)
-
                 if len(document.info) > 0 and "Title" in document.info[0] and document.info[0]["Title"] != b"":
                     if isinstance(document.info[0]["Title"], bytes):
                         info["content"] += document.info[0]["Title"].decode("utf-8", "replace") + "\n"
@@ -399,8 +403,8 @@ class PdfFileParser(GenericFileParser):
 class EbookParser(GenericFileParser):
     is_default = False
 
-    def __init__(self, checksum_calculators: list, content_length: int):
-        super().__init__(checksum_calculators)
+    def __init__(self, checksum_calculators: list, content_length: int, root_dir):
+        super().__init__(checksum_calculators, root_dir)
 
         self.content_length = content_length
 
@@ -435,8 +439,8 @@ class EbookParser(GenericFileParser):
 class DocxParser(GenericFileParser):
     is_default = False
 
-    def __init__(self, checksum_calculators: list, content_length: int):
-        super().__init__(checksum_calculators)
+    def __init__(self, checksum_calculators: list, content_length: int, root_dir):
+        super().__init__(checksum_calculators, root_dir)
 
         self.content_length = content_length
 
@@ -447,12 +451,16 @@ class DocxParser(GenericFileParser):
     def parse(self, full_path: str):
         info = super().parse(full_path)
 
-        text = docx2txt.process(full_path)
+        if self.content_length > 0:
+            try:
+                text = docx2txt.process(full_path)
 
-        if len(text) < self.content_length:
-            info["content"] = text
-        else:
-            info["content"] = text[0:self.content_length]
+                if len(text) < self.content_length:
+                    info["content"] = text
+                else:
+                    info["content"] = text[0:self.content_length]
+            except:
+                print("Couldn't parse Ebook: " + full_path)
 
         return info
 
@@ -460,8 +468,8 @@ class DocxParser(GenericFileParser):
 class SpreadSheetParser(GenericFileParser):
     is_default = False
 
-    def __init__(self, checksum_calculators: list, content_length: int):
-        super().__init__(checksum_calculators)
+    def __init__(self, checksum_calculators: list, content_length: int, root_dir):
+        super().__init__(checksum_calculators, root_dir)
 
         self.content_length = content_length
 

@@ -6,7 +6,7 @@ class PdfParserTest(TestCase):
 
     def test_parse_content_xls(self):
 
-        parser = SpreadSheetParser([], 1500)
+        parser = SpreadSheetParser([], 1500, "test_files/")
 
         info = parser.parse("test_files/xls1.xls")
 
@@ -14,7 +14,7 @@ class PdfParserTest(TestCase):
 
     def test_parse_content_xlsx(self):
 
-        parser = SpreadSheetParser([], 1500)
+        parser = SpreadSheetParser([], 1500, "test_files/")
 
         info = parser.parse("test_files/xlsx1.xlsx")
 

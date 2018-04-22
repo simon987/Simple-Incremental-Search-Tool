@@ -1,6 +1,6 @@
 from PIL import Image
 import os
-from multiprocessing import Value
+from multiprocessing import Value, Process
 import ffmpeg
 import cairosvg
 
@@ -20,11 +20,20 @@ class ThumbnailGenerator:
         if mime == "image/svg+xml":
 
             try:
-                cairosvg.svg2png(url=path, write_to="tmp")
-                self.generate_image("tmp", dest_path)
-                os.remove("tmp")
+                p = Process(target=cairosvg.svg2png, kwargs={"url": path, "write_to": "tmp"})
+                p.start()
+                p.join(1.5)
+
+                if p.is_alive():
+                    p.terminate()
+                    print("Timed out: " + path)
+                else:
+                    self.generate_image("tmp", dest_path)
             except Exception:
                 print("Couldn't make thumbnail for " + path)
+
+            if os.path.exists("tmp"):
+                os.remove("tmp")
 
         elif mime.startswith("image"):
 
@@ -41,18 +50,20 @@ class ThumbnailGenerator:
                  .run()
                  )
                 self.generate_image("tmp", dest_path)
-                os.remove("tmp")
             except Exception as e:
                 print(e)
                 print("Couldn't make thumbnail for " + path)
 
-    def generate_all(self, docs, dest_path,  counter: Value=None):
+            if os.path.exists("tmp"):
+                os.remove("tmp")
+
+    def generate_all(self, docs, dest_path,  counter: Value=None, directory=None):
 
         os.makedirs(dest_path, exist_ok=True)
 
         for doc in docs:
             extension = "" if doc["_source"]["extension"] == "" else "." + doc["_source"]["extension"]
-            full_path = os.path.join(doc["_source"]["path"], doc["_source"]["name"] + extension)
+            full_path = os.path.join(directory.path, doc["_source"]["path"], doc["_source"]["name"] + extension)
 
             if os.path.isfile(full_path) and "mime" in doc["_source"]:
                 self.generate(full_path, os.path.join(dest_path, doc["_id"]), doc["_source"]["mime"])
@@ -61,6 +72,7 @@ class ThumbnailGenerator:
                 counter.value += 1
 
     def generate_image(self, path, dest_path):
+
         with open(path, "rb") as image_file:
             with Image.open(image_file) as image:
 

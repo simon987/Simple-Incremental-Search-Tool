@@ -6,7 +6,7 @@ class PdfParserTest(TestCase):
 
     def test_parse_content(self):
 
-        parser = PdfFileParser([], 12488)
+        parser = PdfFileParser([], 12488, "test_files/")
 
         info = parser.parse("test_files/pdf1.pdf")
 

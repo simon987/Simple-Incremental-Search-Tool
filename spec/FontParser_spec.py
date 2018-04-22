@@ -6,7 +6,7 @@ class FontParserTest(TestCase):
 
     def test_parse_name_trueType(self):
 
-        parser = FontParser([])
+        parser = FontParser([], "test_files/")
 
         info = parser.parse("test_files/truetype1.ttf")
 
@@ -14,7 +14,7 @@ class FontParserTest(TestCase):
 
     def test_parse_name_openType(self):
 
-        parser = FontParser([])
+        parser = FontParser([], "test_files/")
 
         info = parser.parse("test_files/opentype1.otf")
 
@@ -22,7 +22,7 @@ class FontParserTest(TestCase):
 
     def test_parse_name_woff(self):
 
-        parser = FontParser([])
+        parser = FontParser([], "test_files/")
 
         info = parser.parse("test_files/woff.woff")
 
@@ -30,7 +30,7 @@ class FontParserTest(TestCase):
 
     def test_parse_name_woff2(self):
 
-        parser = FontParser([])
+        parser = FontParser([], "test_files/")
 
         info = parser.parse("test_files/woff2.woff2")
 

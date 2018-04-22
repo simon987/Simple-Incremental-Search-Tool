@@ -6,7 +6,7 @@ class EbookParserTest(TestCase):
 
     def test_parse_content(self):
 
-        parser = EbookParser([], 1000)
+        parser = EbookParser([], 1000, "test_files/")
 
         info = parser.parse("test_files/epub1.epub")
 

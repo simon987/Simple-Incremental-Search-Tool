@@ -6,7 +6,7 @@ class TextFileParserTest(TestCase):
 
     def test_parse_csv(self):
 
-        parser = TextFileParser([], 1234)
+        parser = TextFileParser([], 1234, "test_files/")
 
         info = parser.parse("test_files/text.csv")
 

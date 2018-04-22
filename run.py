@@ -128,7 +128,23 @@ def search_route():
     size_max = request.json["size_max"]
     mime_types = request.json["mime_types"]
     must_match = request.json["must_match"]
-    directories = request.json["directories"]  # todo: make sure dir exists and is enabled
+    directories = request.json["directories"]
+
+    # Remove disabled & non-existing directories
+    for search_directory in directories:
+        directory_exists = False
+
+        for dir_id in storage.dirs():
+            if search_directory == dir_id:
+                directory_exists = True
+
+                if not storage.dirs()[dir_id].enabled:
+                    directories.remove(search_directory)
+                break
+
+        if not directory_exists:
+            directories.remove(search_directory)
+
     path = request.json["path"]
 
     page = search.search(query, size_min, size_max, mime_types, must_match, directories, path)

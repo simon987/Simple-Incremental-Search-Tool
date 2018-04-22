@@ -16,34 +16,34 @@ class GenericFileParserTest(TestCase):
         test_file.close()
         os.utime("test_parse.txt", (1330123456, 1330654321))
 
-        self.parser = GenericFileParser([Md5CheckSumCalculator()])
+        self.parser = GenericFileParser([Md5CheckSumCalculator()], "./test_files/")
 
     def tearDown(self):
         os.remove("test_parse.txt")
 
     def test_parse_size(self):
-        result = self.parser.parse("test_parse.txt")
+        result = self.parser.parse("./test_parse.txt")
 
         self.assertEqual(result["size"], 8)
 
     def test_parse_name(self):
-        result = self.parser.parse("test_parse.txt")
+        result = self.parser.parse("./test_parse.txt")
 
         self.assertEqual(result["name"], "test_parse")
 
     def test_parse_ext(self):
-        result = self.parser.parse("test_parse.txt")
+        result = self.parser.parse("./test_parse.txt")
 
         self.assertEqual(result["extension"], "txt")
 
     def test_parse_md5(self):
-        result = self.parser.parse("test_parse.txt")
+        result = self.parser.parse("./test_parse.txt")
 
         self.assertEqual(result["md5"], "25D55AD283AA400AF464C76D713C07AD")
 
     def test_mtime(self):
 
-        result = self.parser.parse("test_parse.txt")
+        result = self.parser.parse("./test_parse.txt")
 
         self.assertEqual(result["mtime"], 1330654321)
 

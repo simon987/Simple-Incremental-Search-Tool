@@ -15,7 +15,6 @@ class Indexer:
 
         try:
             requests.head("http://localhost:9200")
-            print("elasticsearch is already running")
 
         except requests.exceptions.ConnectionError:
             import time

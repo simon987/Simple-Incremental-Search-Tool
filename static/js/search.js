@@ -592,4 +592,4 @@ document.getElementById("pathBar").addEventListener("keyup", function () {
     searchQueued = true;
 });
 
-window.setInterval(search, 75);
+window.setInterval(search, 150);

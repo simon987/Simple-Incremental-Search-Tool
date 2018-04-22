@@ -29,11 +29,13 @@ class RunningTask:
 
 class Crawler:
 
-    def __init__(self, enabled_parsers: list, mime_guesser: MimeGuesser=ContentMimeGuesser(), indexer=None, dir_id=0):
+    def __init__(self, enabled_parsers: list, mime_guesser: MimeGuesser=ContentMimeGuesser(), indexer=None, dir_id=0,
+                 root_dir="/"):
         self.documents = []
         self.enabled_parsers = enabled_parsers
         self.indexer = indexer
         self.dir_id = dir_id
+        self.root_dir = root_dir
 
         for parser in self.enabled_parsers:
             if parser.is_default:
@@ -136,14 +138,14 @@ class TaskManager:
         mime_guesser = ExtensionMimeGuesser() if directory.get_option("MimeGuesser") == "extension" \
             else ContentMimeGuesser()
 
-        c = Crawler([GenericFileParser(chksum_calcs),
-                     MediaFileParser(chksum_calcs),
-                     TextFileParser(chksum_calcs, int(directory.get_option("TextFileContentLength"))),
-                     PictureFileParser(chksum_calcs),
-                     FontParser(chksum_calcs),
-                     PdfFileParser(chksum_calcs, int(directory.get_option("TextFileContentLength"))),  # todo get content len from other opt
-                     DocxParser(chksum_calcs, int(directory.get_option("TextFileContentLength"))),  # todo get content len from other opt
-                     EbookParser(chksum_calcs, int(directory.get_option("TextFileContentLength")))],  # todo get content len from other opt
+        c = Crawler([GenericFileParser(chksum_calcs, directory.path),
+                     MediaFileParser(chksum_calcs, directory.path),
+                     TextFileParser(chksum_calcs, int(directory.get_option("TextFileContentLength")), directory.path),
+                     PictureFileParser(chksum_calcs, directory.path),
+                     FontParser(chksum_calcs, directory.path),
+                     PdfFileParser(chksum_calcs, int(directory.get_option("TextFileContentLength")), directory.path),  # todo get content len from other opt
+                     DocxParser(chksum_calcs, int(directory.get_option("TextFileContentLength")), directory.path),  # todo get content len from other opt
+                     EbookParser(chksum_calcs, int(directory.get_option("TextFileContentLength")), directory.path)],  # todo get content len from other opt
                     mime_guesser, self.indexer, directory.id)
         c.crawl(directory.path, counter)
 
@@ -162,7 +164,7 @@ class TaskManager:
         tn_generator = ThumbnailGenerator(int(directory.get_option("ThumbnailSize")),
                                           int(directory.get_option("ThumbnailQuality")),
                                           directory.get_option("ThumbnailColor"))
-        tn_generator.generate_all(docs, dest_path, counter)
+        tn_generator.generate_all(docs, dest_path, counter, directory)
 
         done.value = 1
 
