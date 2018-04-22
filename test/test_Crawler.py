@@ -2,6 +2,9 @@ from unittest import TestCase
 
 from parsing import GenericFileParser, Sha1CheckSumCalculator, ExtensionMimeGuesser
 from crawler import Crawler
+import os
+
+dir_name = os.path.dirname(os.path.abspath(__file__))
 
 
 class CrawlerTest(TestCase):
@@ -10,7 +13,7 @@ class CrawlerTest(TestCase):
 
         c = Crawler([GenericFileParser([Sha1CheckSumCalculator()], "test_files/")])
 
-        c.crawl("./test_folder")
+        c.crawl(dir_name + "/test_folder")
 
         self.assertEqual(len(c.documents), 31)
 
@@ -18,12 +21,12 @@ class CrawlerTest(TestCase):
 
         c = Crawler([])
 
-        self.assertEqual(c.countFiles("test_folder"), 31)
+        self.assertEqual(c.countFiles(dir_name + "/test_folder"), 31)
 
     def test_path(self):
 
-        c = Crawler([GenericFileParser([], "./test_folder")])
-        c.crawl("./test_folder")
+        c = Crawler([GenericFileParser([], dir_name + "/test_folder")])
+        c.crawl(dir_name + "/test_folder")
 
         file_count_in_sub2 = 0
 

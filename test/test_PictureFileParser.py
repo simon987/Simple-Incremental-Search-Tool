@@ -1,14 +1,17 @@
 from unittest import TestCase
 from parsing import PictureFileParser
+import os
+
+dir_name = os.path.dirname(os.path.abspath(__file__))
 
 
 class PictureFileParserTest(TestCase):
 
     def test_parse_jpg(self):
 
-        parser = PictureFileParser([], "test_files/")
+        parser = PictureFileParser([], dir_name + "/test_files/")
 
-        info = parser.parse("test_folder/sample_1.jpg")
+        info = parser.parse( dir_name + "/test_folder/sample_1.jpg")
 
         self.assertEqual(info["mode"], "RGB")
         self.assertEqual(info["width"], 420)
@@ -17,9 +20,9 @@ class PictureFileParserTest(TestCase):
 
     def test_parse_png(self):
 
-        parser = PictureFileParser([], "test_files/")
+        parser = PictureFileParser([],  dir_name + "/test_files/")
 
-        info = parser.parse("test_folder/sample_5.png")
+        info = parser.parse( dir_name + "/test_folder/sample_5.png")
 
         self.assertEqual(info["mode"], "RGBA")
         self.assertEqual(info["width"], 288)
@@ -28,9 +31,9 @@ class PictureFileParserTest(TestCase):
 
     def test_parse_gif(self):
 
-        parser = PictureFileParser([], "test_files/")
+        parser = PictureFileParser([],  dir_name + "/test_files/")
 
-        info = parser.parse("test_folder/sample_6.gif")
+        info = parser.parse( dir_name + "/test_folder/sample_6.gif")
 
         self.assertEqual(info["mode"], "P")
         self.assertEqual(info["width"], 420)
@@ -41,7 +44,7 @@ class PictureFileParserTest(TestCase):
 
         parser = PictureFileParser([], "test_files/")
 
-        info = parser.parse("test_folder/sample_7.bmp")
+        info = parser.parse( dir_name + "/test_folder/sample_7.bmp")
 
         self.assertEqual(info["mode"], "RGB")
         self.assertEqual(info["width"], 150)

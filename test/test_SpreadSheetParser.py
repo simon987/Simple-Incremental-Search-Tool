@@ -1,6 +1,10 @@
 from unittest import TestCase
 from parsing import SpreadSheetParser
 
+import os
+
+dir_name = os.path.dirname(os.path.abspath(__file__))
+
 
 class PdfParserTest(TestCase):
 
@@ -8,7 +12,7 @@ class PdfParserTest(TestCase):
 
         parser = SpreadSheetParser([], 1500, "test_files/")
 
-        info = parser.parse("test_files/xls1.xls")
+        info = parser.parse(dir_name + "/test_files/xls1.xls")
 
         self.assertEqual(len(info["content"]), 1500)
 
@@ -16,6 +20,6 @@ class PdfParserTest(TestCase):
 
         parser = SpreadSheetParser([], 1500, "test_files/")
 
-        info = parser.parse("test_files/xlsx1.xlsx")
+        info = parser.parse(dir_name + "/test_files/xlsx1.xlsx")
 
         self.assertEqual(len(info["content"]), 1500)

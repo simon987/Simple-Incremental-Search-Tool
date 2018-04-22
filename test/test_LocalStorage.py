@@ -2,19 +2,23 @@ from unittest import TestCase
 from storage import LocalStorage, Directory, DuplicateDirectoryException, User, DuplicateUserException, Option, Task
 import os
 
+import os
+
+dir_name = os.path.dirname(os.path.abspath(__file__))
+
 
 class LocalStorageTest(TestCase):
 
     def setUp(self):
-        if os.path.exists("test_database.db"):
-            os.remove("test_database.db")
+        if os.path.exists(dir_name + "/test_database.db"):
+            os.remove(dir_name + "/test_database.db")
 
-        s = LocalStorage("test_database.db")
-        s.init_db("../database.sql")
+        s = LocalStorage(dir_name + "/test_database.db")
+        s.init_db(dir_name + "/../database.sql")
 
     def test_save_and_retrieve_dir(self):
 
-        storage = LocalStorage("test_database.db")
+        storage = LocalStorage(dir_name + "/test_database.db")
 
         d = Directory("/some/directory", True, [Option("key1", "val1"), Option("key2", "val2")], "An excellent name")
 
@@ -27,13 +31,13 @@ class LocalStorageTest(TestCase):
 
     def test_save_and_retrieve_dir_persistent(self):
 
-        s1 = LocalStorage("test_database.db")
+        s1 = LocalStorage(dir_name + "/test_database.db")
 
         d = Directory("/some/directory", True, [Option("key1", "val1"), Option("key2", "val2")], "An excellent name")
 
         dir_id = s1.save_directory(d)
 
-        s2 = LocalStorage("test_database.db")
+        s2 = LocalStorage(dir_name + "/test_database.db")
         self.assertEqual(s2.dirs()[dir_id].enabled, True)
 
         self.assertEqual(s2.dirs()[dir_id].options[0].key, "key1")
@@ -42,7 +46,7 @@ class LocalStorageTest(TestCase):
 
     def test_reject_duplicate_path(self):
 
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         d1 = Directory("/some/directory", True, [Option("key1", "val1"), Option("key2", "val2")], "An excellent name")
         d2 = Directory("/some/directory", True, [Option("key1", "val1"), Option("key2", "val2")], "An excellent name")
@@ -53,7 +57,7 @@ class LocalStorageTest(TestCase):
             s.save_directory(d2)
 
     def test_remove_dir(self):
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         d = Directory("/some/directory", True, [Option("key1", "val1"), Option("key2", "val3")], "An excellent name")
         dir_id = s.save_directory(d)
@@ -65,7 +69,7 @@ class LocalStorageTest(TestCase):
 
     def test_save_and_retrieve_user(self):
 
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         u = User("bob", b"anHashedPassword", True)
 
@@ -76,14 +80,14 @@ class LocalStorageTest(TestCase):
 
     def test_return_none_with_unknown_user(self):
 
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         with self.assertRaises(KeyError) as e:
             _ = s.users()["unknown_user"]
 
     def test_auth_user(self):
 
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         u = User("bob", b'$2b$10$RakMb.3n/tl76sK7iVahJuklNYkR7f2Y4dsf73tPANwYBkp4VuJ7.', True)
 
@@ -96,7 +100,7 @@ class LocalStorageTest(TestCase):
 
     def test_reject_duplicate_user(self):
 
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         u1 = User("user1", b"anHashedPassword", True)
         u2 = User("user1", b"anotherHashedPassword", True)
@@ -107,7 +111,7 @@ class LocalStorageTest(TestCase):
             s.save_user(u2)
 
     def test_update_user(self):
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         u = User("neil", b"anHashedPassword", True)
 
@@ -120,7 +124,7 @@ class LocalStorageTest(TestCase):
 
     def test_remove_user(self):
 
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         u = User("martin", b"anHashedPassword", True)
         s.save_user(u)
@@ -132,7 +136,7 @@ class LocalStorageTest(TestCase):
 
     def test_update_directory(self):
 
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         d = Directory("/some/directory", True, [Option("key1", "val1"), Option("key2", "val2")], "An excellent name")
 
@@ -145,7 +149,7 @@ class LocalStorageTest(TestCase):
 
         s.update_directory(d)
 
-        s2 = LocalStorage("test_database.db")
+        s2 = LocalStorage(dir_name + "/test_database.db")
 
         self.assertEqual(s2.dirs()[dir_id].name, "A modified name")
         self.assertEqual(len(s2.dirs()[dir_id].options), 2)
@@ -154,7 +158,7 @@ class LocalStorageTest(TestCase):
 
     def test_save_option(self):
 
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         d = Directory("/some/directory", True, [Option("key1", "val1"), Option("key2", "val2")], "An excellent name")
         dir_id = s.save_directory(d)
@@ -168,7 +172,7 @@ class LocalStorageTest(TestCase):
 
     def test_del_option(self):
 
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         d = Directory("/some/directory", True, [Option("key1", "val1"), Option("key2", "val2")], "An excellent name")
         dir_id = s.save_directory(d)
@@ -181,7 +185,7 @@ class LocalStorageTest(TestCase):
 
     def test_update_option(self):
 
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         d = Directory("/some/directory", True, [Option("key1", "val1"), Option("key2", "val2")], "An excellent name")
         dir_id = s.save_directory(d)
@@ -192,7 +196,7 @@ class LocalStorageTest(TestCase):
 
     def test_save_task(self):
 
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         dir_id = s.save_directory(Directory("/some/dir", True, [], "my dir"))
         task_id = s.save_task(Task(0, dir_id))
@@ -201,12 +205,12 @@ class LocalStorageTest(TestCase):
         self.assertEqual(task_id, 1)
 
     def test_del_task(self):
-        s = LocalStorage("test_database.db")
+        s = LocalStorage(dir_name + "/test_database.db")
 
         dir_id = s.save_directory(Directory("/some/dir", True, [], "my dir"))
         task_id = s.save_task(Task(0, dir_id))
 
-        s2 = LocalStorage("test_database.db")
+        s2 = LocalStorage(dir_name + "/test_database.db")
         s2.tasks()
         s2.del_task(task_id)
 
