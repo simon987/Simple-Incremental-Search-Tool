@@ -2,7 +2,7 @@ from PIL import Image
 import os
 from multiprocessing import Value, Process
 import ffmpeg
-import cairosvg
+#import cairosvg
 
 
 class ThumbnailGenerator:

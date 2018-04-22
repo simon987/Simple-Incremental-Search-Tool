@@ -1,5 +1,4 @@
 import hashlib
-import magic
 import os
 import mimetypes
 import subprocess

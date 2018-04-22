@@ -29,7 +29,7 @@ class RunningTask:
 
 class Crawler:
 
-    def __init__(self, enabled_parsers: list, mime_guesser: MimeGuesser=ContentMimeGuesser(), indexer=None, dir_id=0,
+    def __init__(self, enabled_parsers: list, mime_guesser: MimeGuesser=ExtensionMimeGuesser(), indexer=None, dir_id=0,
                  root_dir="/"):
         self.documents = []
         self.enabled_parsers = enabled_parsers

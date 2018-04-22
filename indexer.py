@@ -1,9 +1,11 @@
 import json
 import elasticsearch
+from elasticsearch.exceptions import TransportError
 from threading import Thread
 import subprocess
 import requests
 import config
+import platform
 
 
 class Indexer:
@@ -24,15 +26,20 @@ class Indexer:
 
             time.sleep(15)
 
-            try:
-                requests.head("http://localhost:9200")
-            except requests.exceptions.ConnectionError:
+            if self.es.indices.exists(self.index_name):
+                print("Index is already setup")
+            else:
                 print("First time setup...")
                 self.init()
 
     @staticmethod
     def run_elasticsearch():
-        subprocess.Popen(["elasticsearch/bin/elasticsearch"])
+	
+        if platform.system() == "Windows":
+            subprocess.Popen(["elasticsearch\\bin\\elasticsearch.bat"])
+        else:
+            print(platform.system())
+            subprocess.Popen(["elasticsearch/bin/elasticsearch"])
 
     @staticmethod
     def create_bulk_index_string(docs: list, directory: int):
@@ -62,7 +69,8 @@ class Indexer:
         self.es.indices.create(self.index_name)
 
     def init(self):
-        self.es.indices.delete(index=self.index_name)
+        if self.es.indices.exists(self.index_name):
+            self.es.indices.delete(index=self.index_name)
         self.es.indices.create(index=self.index_name)
         self.es.indices.close(index=self.index_name)
 
