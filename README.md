@@ -19,13 +19,13 @@ Work in progress! Shouldn't be used in production environnments.
 
 
 # Installation
-Java and python3 are required.    
+Java and python3 are required. To parse video and audio files, `ffmpeg` needs to be installed    
 Once the web server is running, you can connect to the search interface by typing `localhost:8080` in your browser.
 
 ## Setup on Windows
 ```bash
 git clone https://github.com/simon987/Simple-Incremental-Search-Tool
-cd Projet-Web-2018
+cd Simple-Incremental-Search-Tool
 ```
 [Download latest elasticsearch version](https://www.elastic.co/downloads/elasticsearch) and extract to `Simple-Incremental-Search-Tool\elasticsearch`
 
@@ -38,7 +38,7 @@ python3 run.py
 ## Setup on Mac/linux
 ```bash
 git clone https://github.com/simon987/Simple-Incremental-Search-Tool
-cd Projet-Web-2018
+cd Simple-Incremental-Search-Tool
 wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.4.zip
 unzip elasticsearch-6.2.4.zip
 rm elasticsearch-6.2.4.zip
