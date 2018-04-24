@@ -124,6 +124,8 @@ class TaskManager:
 
     def execute_crawl(self, directory: Directory, counter: Value, done: Value):
 
+        Search("changeme").delete_directory(directory.id)
+
         chksum_calcs = []
 
         for arg in directory.get_option("CheckSumCalculators").split(","):

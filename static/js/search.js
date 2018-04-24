@@ -276,15 +276,15 @@ function createDocCard(hit) {
                 break;
 
             case "video":
-                thumbnailOverlay = document.createElement("div");
-                thumbnailOverlay.setAttribute("class", "card-img-overlay");
-
                 //Duration
-                let durationBadge = document.createElement("span");
-                durationBadge.setAttribute("class", "badge badge-resolution");
-                durationBadge.appendChild(document.createTextNode(humanTime(hit["_source"]["duration"])));
-                thumbnailOverlay.appendChild(durationBadge);
-
+                if (hit["_source"].hasOwnProperty("duration")) {
+                    thumbnailOverlay = document.createElement("div");
+                    thumbnailOverlay.setAttribute("class", "card-img-overlay");
+                    let durationBadge = document.createElement("span");
+                    durationBadge.setAttribute("class", "badge badge-resolution");
+                    durationBadge.appendChild(document.createTextNode(humanTime(hit["_source"]["duration"])));
+                    thumbnailOverlay.appendChild(durationBadge);
+                }
         }
 
         //Tags

@@ -296,6 +296,10 @@ def directory_update_opt(dir_id):
 @app.route("/directory/<int:dir_id>/del")
 def directory_del(dir_id):
 
+    search.delete_directory(dir_id)
+    if os.path.exists("static/thumbnails/" + str(dir_id)):
+        shutil.rmtree("static/thumbnails/" + str(dir_id))
+
     storage.remove_directory(dir_id)
     flash("<strong>Deleted directory</strong>", "success")
 
