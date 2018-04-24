@@ -4,7 +4,6 @@ import mimetypes
 import subprocess
 import json
 import chardet
-import html
 import warnings
 import docx2txt
 import xlrd
@@ -290,7 +289,7 @@ class TextFileParser(GenericFileParser):
                     info["encoding"] = encoding
                     try:
                         content = raw_content.decode(encoding, "ignore")
-                        info["content"] = html.escape(content)
+                        info["content"] = content
                     except Exception:
                         print("Unknown encoding: " + encoding)
 
@@ -497,7 +496,6 @@ class SpreadSheetParser(GenericFileParser):
                 num_cells = worksheet.ncols
 
                 for curr_row in range(num_rows):
-                    row = worksheet.row(curr_row)
                     new_output = []
                     for index_col in xrange(num_cells):
                         value = worksheet.cell_value(curr_row, index_col)

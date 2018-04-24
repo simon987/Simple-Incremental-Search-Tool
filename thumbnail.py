@@ -2,7 +2,10 @@ from PIL import Image
 import os
 from multiprocessing import Value, Process
 import ffmpeg
-#import cairosvg
+import config
+
+if config.cairosvg:
+    import cairosvg
 
 
 class ThumbnailGenerator:
@@ -17,12 +20,12 @@ class ThumbnailGenerator:
         if mime is None:
             return
 
-        if mime == "image/svg+xml":
+        if mime == "image/svg+xml" and config.cairosvg:
 
             try:
                 p = Process(target=cairosvg.svg2png, kwargs={"url": path, "write_to": "tmp"})
                 p.start()
-                p.join(1.5)
+                p.join(1)
 
                 if p.is_alive():
                     p.terminate()
@@ -50,8 +53,7 @@ class ThumbnailGenerator:
                  .run()
                  )
                 self.generate_image("tmp", dest_path)
-            except Exception as e:
-                print(e)
+            except Exception:
                 print("Couldn't make thumbnail for " + path)
 
             if os.path.exists("tmp"):

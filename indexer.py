@@ -37,7 +37,6 @@ class Indexer:
         if platform.system() == "Windows":
             subprocess.Popen(["elasticsearch\\bin\\elasticsearch.bat"])
         else:
-            print(platform.system())
             subprocess.Popen(["elasticsearch/bin/elasticsearch"])
 
     @staticmethod
@@ -86,6 +85,9 @@ class Indexer:
             "analysis": {"analyzer": {"my_nGram": {"tokenizer": "my_nGram_tokenizer", "filter": ["lowercase",
                                                                                                  "asciifolding"]}}}},
             index=self.index_name)
+        self.es.indices.put_settings(body={
+            "analysis": {"analyzer": {"content_analyser": {"tokenizer": "standard", "filter": ["lowercase"]}}}},
+            index=self.index_name)
 
         self.es.indices.put_mapping(body={"properties": {
             "path": {"type": "text", "analyzer": "path_analyser", "copy_to": "suggest-path"},
@@ -98,6 +100,7 @@ class Indexer:
             "width": {"type": "integer"},
             "height": {"type": "integer"},
             "mtime": {"type": "integer"},
+            "size": {"type": "long"},
             "directory": {"type": "short"},
             "name": {"analyzer": "my_nGram", "type": "text"},
             "album": {"analyzer": "my_nGram", "type": "text"},
@@ -105,6 +108,7 @@ class Indexer:
             "title": {"analyzer": "my_nGram", "type": "text"},
             "genre": {"analyzer": "my_nGram", "type": "text"},
             "album_artist": {"analyzer": "my_nGram", "type": "text"},
+            "content": {"analyzer": "content_analyser", "type": "text"},
         }}, doc_type="file", index=self.index_name)
 
         self.es.indices.open(index=self.index_name)

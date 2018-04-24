@@ -14,5 +14,5 @@ class TextFileParserTest(TestCase):
         info = parser.parse(dir_name + "/test_files/text.csv")
 
         self.assertTrue(info["content"].startswith("rosbagTimestamp,header,seq,stamp,secs,nsecs,"))
-        self.assertEqual(len(info["content"]), 1309)  # Size is larger because of html escaping
+        self.assertEqual(len(info["content"]), 1234)
         self.assertEqual(info["encoding"], "ascii")

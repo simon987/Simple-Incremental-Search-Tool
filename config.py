@@ -25,4 +25,10 @@ bcrypt_rounds = 14
 # sqlite3 database path
 db_path = "./local_storage.db"
 
+try:
+    import cairosvg
+    cairosvg = True
+except:
+    cairosvg = False
+
 VERSION = "1.0a"
