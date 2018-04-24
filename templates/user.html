@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+
+{% set active_page = "user" %}
+
+{% block body %}
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">Create user</div>
+            <div class="card-body">
+
+                <form method="POST" action="/user/add">
+
+                    <div class="input-group form-group">
+                        <div class="input-group-prepend">
+                            <div class="input-group-text">
+                                <label for="is_admin" style="margin: 0 8px 0 0">Set admin</label>
+                                <input title="Set user as admin" type="checkbox" id="is_admin" name="is_admin">
+                            </div>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Username" name="username">
+                    </div>
+
+                    <div class="form-group">
+                        <input type="password" class="form-control" placeholder="Password" name="password">
+                    </div>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-plus"></i> Add User</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Users</div>
+            <div class="card-body">
+
+                <table class="info-table table-hover table-striped">
+                    <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Admin</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>{{ user }}</td>
+                            <td><i class="far {{ "fa-check-square" if users[user].admin else "fa-square" }}"></i></td>
+                            <td><a href="/user/{{ user }}" class="btn btn-primary">Manage</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+
+                </table>
+
+            </div>
+        </div>
+
+    </div>
+
+{% endblock body %}

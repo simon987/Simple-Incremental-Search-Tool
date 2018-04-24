@@ -389,3 +389,35 @@ class LocalStorage:
         conn.commit()
         c.close()
         conn.close()
+
+    def set_access(self, username, dir_id, has_access):
+
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+
+        if has_access:
+            try:
+                c.execute("INSERT INTO User_canRead_Directory VALUES (?,?)", (username, dir_id))
+            except sqlite3.IntegrityError:
+                pass
+        else:
+            c.execute("DELETE FROM User_canRead_Directory WHERE username=? AND directory_id=?", (username, dir_id))
+
+        conn.commit()
+        c.close()
+        conn.close()
+
+    def get_access(self, username):
+
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+
+        c.execute("SELECT * FROM User_canRead_Directory WHERE username=?", (username,))
+
+        accesses = c.fetchall()
+        access_list = []
+
+        for access in accesses:
+            access_list.append(access[1])
+
+        return access_list

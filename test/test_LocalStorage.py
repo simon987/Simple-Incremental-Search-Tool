@@ -2,8 +2,6 @@ from unittest import TestCase
 from storage import LocalStorage, Directory, DuplicateDirectoryException, User, DuplicateUserException, Option, Task
 import os
 
-import os
-
 dir_name = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -218,5 +216,21 @@ class LocalStorageTest(TestCase):
 
         with self.assertRaises(KeyError):
             _ = s2.tasks()[task_id]
+
+    def test_set_access(self):
+        s = LocalStorage(dir_name + "/test_database.db")
+
+        dir_id = s.save_directory(Directory("/some/dir", True, [], "my dir"))
+        dir_id2 = s.save_directory(Directory("/some/dir2", True, [], "my dir2"))
+        dir_id3 = s.save_directory(Directory("/some/dir3", True, [], "my dir3"))
+        s.save_user(User("bob", b"", False))
+
+        s.set_access("bob", dir_id, True)
+        s.set_access("bob", dir_id2, True)
+        s.set_access("bob", dir_id3, True)
+        s.set_access("bob", dir_id3, False)
+
+        self.assertEqual(s.get_access("bob"), [dir_id, dir_id2])
+
 
 

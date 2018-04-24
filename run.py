@@ -1,15 +1,17 @@
 from flask import Flask, render_template, request, redirect, flash, session, abort, send_file
-from storage import Directory, Option, Task
-from storage import LocalStorage, DuplicateDirectoryException
+from storage import Directory, Option, Task, User
+from storage import LocalStorage, DuplicateDirectoryException, DuplicateUserException
 from crawler import RunningTask, TaskManager
 import json
 import os
 import shutil
+import bcrypt
 import config
 import humanfriendly
 from search import Search
 from PIL import Image
 from io import BytesIO
+
 
 app = Flask(__name__)
 app.secret_key = "A very secret key"
@@ -30,6 +32,59 @@ def get_dir_size(path):
             size += os.path.getsize(full_path)
 
     return size
+
+
+@app.route("/user/<user>")
+def user_manage(user):
+
+    return user
+
+
+@app.route("/logout")
+def logout():
+    session.pop("username")
+    session.pop("admin")
+    flash("Successfully logged out", "success")
+    return redirect("/")
+
+
+@app.route("/login", methods=['POST'])
+def login():
+    username = request.form["username"]
+    password = request.form["password"]
+
+    if storage.auth_user(username, password):
+        session["username"] = username
+        session["admin"] = storage.users()[username].admin
+
+        print(session["admin"])
+        flash("Successfully logged in", "success")
+    else:
+        flash("Invalid username or password", "danger")
+
+    return redirect("/")
+
+
+@app.route("/user")
+def user_page():
+
+    return render_template("user.html", users=storage.users())
+
+
+@app.route("/user/add", methods=['POST'])
+def user_add():
+
+    username = request.form["username"]
+    password = bcrypt.hashpw(request.form["password"].encode("utf-8"), bcrypt.gensalt(config.bcrypt_rounds))
+    is_admin = True if "is_admin" in request.form else False
+
+    try:
+        storage.save_user(User(username, password, is_admin))
+        flash("Created new user", "success")
+    except DuplicateUserException:
+        flash("<strong>Couldn't create user</strong> Make sure that the username is unique", "danger")
+
+    return redirect("/user")
 
 
 @app.route("/suggest")

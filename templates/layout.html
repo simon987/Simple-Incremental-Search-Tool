@@ -66,14 +66,26 @@
                 <a class="nav-link {% if "task" == active_page %}active{% endif %}" href="/task">Tasks</a>
             </li>
             <li class="nav-item">
+                <a class="nav-link {% if "user" == active_page %}active{% endif %}" href="/user">Users</a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link {% if "dashboard" == active_page %}active{% endif %}" href="/dashboard">Dashboard</a>
             </li>
         </ul>
-        <form class="form-inline my-2 my-lg-0">
-            <input class="form-control mr-sm-2" placeholder="Username">
-            <input class="form-control mr-sm-2" type="password" placeholder="Password">
-            <button class="btn btn-outline-success my-2 my-sm-0">Login</button>
-        </form>
+
+        {% if session["username"] %}
+            <span>
+            Logged in as <i>{{ session["username"] }}</i>
+            {% if session["admin"] %}(Admin){% endif %}
+            </span>
+            <a href="/logout" class="btn btn-outline-warning" style="margin-left: 8px">Logout</a>
+        {% else %}
+            <form class="form-inline my-2 my-lg-0" method="POST" action="/login">
+                <input class="form-control mr-sm-2" placeholder="Username" name="username">
+                <input class="form-control mr-sm-2" type="password" placeholder="Password" name="password">
+                <button class="btn btn-outline-success my-2 my-sm-0">Login</button>
+            </form>
+        {% endif %}
     </div>
 </nav>
 
