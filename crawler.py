@@ -12,7 +12,6 @@ from thumbnail import ThumbnailGenerator
 from storage import Directory
 import shutil
 import config
-from ctypes import c_char_p
 
 
 class RunningTask:

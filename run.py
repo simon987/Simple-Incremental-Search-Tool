@@ -57,7 +57,6 @@ def login():
         session["username"] = username
         session["admin"] = storage.users()[username].admin
 
-        print(session["admin"])
         flash("Successfully logged in", "success")
     else:
         flash("Invalid username or password", "danger")
@@ -68,23 +67,31 @@ def login():
 @app.route("/user")
 def user_page():
 
-    return render_template("user.html", users=storage.users())
+    if "admin" in session and session["admin"]:
+        return render_template("user.html", users=storage.users())
+    else:
+        flash("You are not authorized to access this page")
+        return redirect("/")
 
 
 @app.route("/user/add", methods=['POST'])
 def user_add():
 
-    username = request.form["username"]
-    password = bcrypt.hashpw(request.form["password"].encode("utf-8"), bcrypt.gensalt(config.bcrypt_rounds))
-    is_admin = True if "is_admin" in request.form else False
+    if "admin" in session and session["admin"]:
+        username = request.form["username"]
+        password = bcrypt.hashpw(request.form["password"].encode("utf-8"), bcrypt.gensalt(config.bcrypt_rounds))
+        is_admin = True if "is_admin" in request.form else False
 
-    try:
-        storage.save_user(User(username, password, is_admin))
-        flash("Created new user", "success")
-    except DuplicateUserException:
-        flash("<strong>Couldn't create user</strong> Make sure that the username is unique", "danger")
+        try:
+            storage.save_user(User(username, password, is_admin))
+            flash("Created new user", "success")
+        except DuplicateUserException:
+            flash("<strong>Couldn't create user</strong> Make sure that the username is unique", "danger")
 
-    return redirect("/user")
+        return redirect("/user")
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 @app.route("/suggest")
@@ -220,183 +227,232 @@ def scroll_route():
 @app.route("/directory")
 def dir_list():
 
-    return render_template("directory.html", directories=storage.dirs())
+    if "admin" in session and session["admin"]:
+        return render_template("directory.html", directories=storage.dirs())
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 @app.route("/directory/add")
 def directory_add():
 
-    path = request.args.get("path")
-    name = request.args.get("name")
+    if "admin" in session and session["admin"]:
+        path = request.args.get("path")
+        name = request.args.get("name")
 
-    if path is not None and name is not None:
-        d = Directory(path, True, [], name)
+        if path is not None and name is not None:
+            d = Directory(path, True, [], name)
 
-        try:
-            d.set_default_options()
-            storage.save_directory(d)
-            flash("<strong>Created directory</strong>", "success")
-        except DuplicateDirectoryException:
-            flash("<strong>Couldn't create directory</strong> Make sure that the path is unique", "danger")
+            try:
+                d.set_default_options()
+                storage.save_directory(d)
+                flash("<strong>Created directory</strong>", "success")
+            except DuplicateDirectoryException:
+                flash("<strong>Couldn't create directory</strong> Make sure that the path is unique", "danger")
 
-    return redirect("/directory")
+        return redirect("/directory")
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 @app.route("/directory/<int:dir_id>")
 def directory_manage(dir_id):
 
-    directory = storage.dirs()[dir_id]
-    tn_size = get_dir_size("static/thumbnails/" + str(dir_id))
-    tn_size_formatted = humanfriendly.format_size(tn_size)
+    if "admin" in session and session["admin"]:
+        directory = storage.dirs()[dir_id]
+        tn_size = get_dir_size("static/thumbnails/" + str(dir_id))
+        tn_size_formatted = humanfriendly.format_size(tn_size)
 
-    return render_template("directory_manage.html", directory=directory, tn_size=tn_size,
-                           tn_size_formatted=tn_size_formatted)
+        return render_template("directory_manage.html", directory=directory, tn_size=tn_size,
+                               tn_size_formatted=tn_size_formatted)
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 @app.route("/directory/<int:dir_id>/update")
 def directory_update(dir_id):
 
-    directory = storage.dirs()[dir_id]
+    if "admin" in session and session["admin"]:
+        directory = storage.dirs()[dir_id]
 
-    name = request.args.get("name")
-    name = directory.name if name is None else name
+        name = request.args.get("name")
+        name = directory.name if name is None else name
 
-    enabled = request.args.get("enabled")
-    enabled = directory.enabled if enabled is None else int(enabled)
+        enabled = request.args.get("enabled")
+        enabled = directory.enabled if enabled is None else int(enabled)
 
-    path = request.args.get("path")
-    path = directory.path if path is None else path
+        path = request.args.get("path")
+        path = directory.path if path is None else path
 
-    # Only name and enabled status can be updated
-    updated_dir = Directory(path, enabled, directory.options, name)
-    updated_dir.id = dir_id
+        # Only name and enabled status can be updated
+        updated_dir = Directory(path, enabled, directory.options, name)
+        updated_dir.id = dir_id
 
-    try:
-        storage.update_directory(updated_dir)
-        flash("<strong>Updated directory</strong>", "success")
+        try:
+            storage.update_directory(updated_dir)
+            flash("<strong>Updated directory</strong>", "success")
 
-    except DuplicateDirectoryException:
-        flash("<strong>Couldn't update directory</strong> Make sure that the path is unique", "danger")
+        except DuplicateDirectoryException:
+            flash("<strong>Couldn't update directory</strong> Make sure that the path is unique", "danger")
 
-    return redirect("/directory/" + str(dir_id))
+        return redirect("/directory/" + str(dir_id))
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 @app.route("/directory/<int:dir_id>/update_opt")
 def directory_update_opt(dir_id):
 
-    opt_id = request.args.get("id")
-    opt_key = request.args.get("key")
-    opt_value = request.args.get("value")
+    if "admin" in session and session["admin"]:
+        opt_id = request.args.get("id")
+        opt_key = request.args.get("key")
+        opt_value = request.args.get("value")
 
-    storage.update_option(Option(opt_key, opt_value, dir_id, opt_id))
+        storage.update_option(Option(opt_key, opt_value, dir_id, opt_id))
 
-    return redirect("/directory/" + str(dir_id))
+        return redirect("/directory/" + str(dir_id))
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 @app.route("/directory/<int:dir_id>/del")
 def directory_del(dir_id):
+    if "admin" in session and session["admin"]:
+        search.delete_directory(dir_id)
+        if os.path.exists("static/thumbnails/" + str(dir_id)):
+            shutil.rmtree("static/thumbnails/" + str(dir_id))
 
-    search.delete_directory(dir_id)
-    if os.path.exists("static/thumbnails/" + str(dir_id)):
-        shutil.rmtree("static/thumbnails/" + str(dir_id))
+        storage.remove_directory(dir_id)
+        flash("<strong>Deleted directory</strong>", "success")
 
-    storage.remove_directory(dir_id)
-    flash("<strong>Deleted directory</strong>", "success")
-
-    return redirect("/directory")
+        return redirect("/directory")
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 @app.route("/directory/<int:dir_id>/reset")
 def directory_reset(dir_id):
-    directory = storage.dirs()[dir_id]
 
-    for opt in directory.options:
-        storage.del_option(opt.id)
+    if "admin" in session and session["admin"]:
+        directory = storage.dirs()[dir_id]
 
-    directory.set_default_options()
+        for opt in directory.options:
+            storage.del_option(opt.id)
 
-    for opt in directory.options:
-        opt.dir_id = dir_id
-        storage.save_option(opt)
+        directory.set_default_options()
 
-    storage.dir_cache_outdated = True
+        for opt in directory.options:
+            opt.dir_id = dir_id
+            storage.save_option(opt)
 
-    search.delete_directory(dir_id)
+        storage.dir_cache_outdated = True
 
-    flash("<strong>Reset directory options to default settings</strong>", "success")
-    return redirect("directory/" + str(dir_id))
+        search.delete_directory(dir_id)
+
+        flash("<strong>Reset directory options to default settings</strong>", "success")
+        return redirect("directory/" + str(dir_id))
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 @app.route("/task")
 def task():
-
-    return render_template("task.html", tasks=storage.tasks(), directories=storage.dirs(),
-                           task_list=json.dumps(list(storage.tasks().keys())))
-    # return render_template("task.html", tasks=storage.tasks(), directories=storage.dirs())
+    if "admin" in session and session["admin"]:
+        return render_template("task.html", tasks=storage.tasks(), directories=storage.dirs(),
+                               task_list=json.dumps(list(storage.tasks().keys())))
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 @app.route("/task/current")
 def get_current_task():
+    if "admin" in session and session["admin"]:
 
-    if tm and tm.current_task:
-        return tm.current_task.to_json()
+        if tm and tm.current_task:
+            return tm.current_task.to_json()
+        else:
+            return ""
     else:
-        return ""
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 @app.route("/task/add")
 def task_add():
-    type = request.args.get("type")
-    directory = request.args.get("directory")
+    if "admin" in session and session["admin"]:
+        task_type = request.args.get("type")
+        directory = request.args.get("directory")
 
-    storage.save_task(Task(type, directory))
+        storage.save_task(Task(task_type, directory))
 
-    return redirect("/task")
+        return redirect("/task")
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 @app.route("/task/<int:task_id>/del")
 def task_del(task_id):
-    storage.del_task(task_id)
+    if "admin" in session and session["admin"]:
+        storage.del_task(task_id)
 
-    if tm.current_task is not None and task_id == tm.current_task.task.id:
-        tm.cancel_task()
+        if tm.current_task is not None and task_id == tm.current_task.task.id:
+            tm.cancel_task()
 
-    return redirect("/task")
+        return redirect("/task")
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 @app.route("/reset_es")
 def reset_es():
+    if "admin" in session and session["admin"]:
+        flash("Elasticsearch index has been reset. Modifications made in <b>config.py</b> have been applied.", "success")
 
-    flash("Elasticsearch index has been reset. Modifications made in <b>config.py</b> have been applied.", "success")
+        tm.indexer.init()
+        if os.path.exists("static/thumbnails"):
+            shutil.rmtree("static/thumbnails")
 
-    tm.indexer.init()
-    if os.path.exists("static/thumbnails"):
-        shutil.rmtree("static/thumbnails")
-
-    return redirect("/dashboard")
+        return redirect("/dashboard")
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 @app.route("/dashboard")
 def dashboard():
+    if "admin" in session and session["admin"]:
+        tn_sizes = {}
+        tn_size_total = 0
+        for directory in storage.dirs():
+            tn_size = get_dir_size("static/thumbnails/" + str(directory))
+            tn_size_formatted = humanfriendly.format_size(tn_size)
 
-    tn_sizes = {}
-    tn_size_total = 0
-    for directory in storage.dirs():
-        tn_size = get_dir_size("static/thumbnails/" + str(directory))
-        tn_size_formatted = humanfriendly.format_size(tn_size)
+            tn_sizes[directory] = tn_size_formatted
+            tn_size_total += tn_size
 
-        tn_sizes[directory] = tn_size_formatted
-        tn_size_total += tn_size
+        tn_size_total_formatted = humanfriendly.format_size(tn_size_total)
 
-    tn_size_total_formatted = humanfriendly.format_size(tn_size_total)
+        return render_template("dashboard.html", version=config.VERSION, tn_sizes=tn_sizes,
+                               tn_size_total=tn_size_total_formatted,
+                               doc_size=humanfriendly.format_size(search.get_doc_size()),
+                               doc_count=search.get_doc_count(),
+                               db_path=config.db_path,
+                               elasticsearch_url=config.elasticsearch_url,
+                               index_size=humanfriendly.format_size(search.get_index_size()))
 
-    return render_template("dashboard.html", version=config.VERSION, tn_sizes=tn_sizes,
-                           tn_size_total=tn_size_total_formatted,
-                           doc_size=humanfriendly.format_size(search.get_doc_size()),
-                           doc_count=search.get_doc_count(),
-                           db_path=config.db_path,
-                           elasticsearch_url=config.elasticsearch_url,
-                           index_size=humanfriendly.format_size(search.get_index_size()))
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
 
 
 if __name__ == "__main__":
