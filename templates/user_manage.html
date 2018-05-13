@@ -1,29 +1,15 @@
 {% extends "layout.html" %}
 
+{% set active_page = "user" %}
+
 {% block body %}
 
+    <div class="container">
         <div class="card">
-            <div class="card-header">Directory permissions</div>
+            <div class="card-header">Manage permission of <strong>{{ session["username"] }}</strong></div>
             <div class="card-body">
 
-                <table class="info-table table-hover table-striped">
-                    <thead>
-                    <tr>
-                        <th>Directory</th>
-                        <th>Search access</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for user in users %}
-                        <tr>
-                            <td>{{ user }}</td>
-                            <td><i class="far {{ "fa-check-square" if users[user].admin else "fa-square" }}"></i></td>
-                            <td><a href="/user/{{ user }}" class="btn btn-primary">Manage</a></td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
 
-                </table>
 
             </div>
         </div>

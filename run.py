@@ -37,6 +37,12 @@ def get_dir_size(path):
 @app.route("/user/<user>")
 def user_manage(user):
 
+    if "admin" in session and session["admin"]:
+        pass
+    else:
+        flash("You are not authorized to access this page", "warning")
+        return redirect("/")
+
     return user
 
 
@@ -67,17 +73,31 @@ def login():
 @app.route("/user")
 def user_page():
 
-    if "admin" in session and session["admin"]:
-        return render_template("user.html", users=storage.users())
+    admin_account_present = False
+
+    for user in storage.users():
+        if storage.users()[user].admin:
+            admin_account_present = True
+            break
+
+    if not admin_account_present or ("admin" in session and session["admin"]):
+        return render_template("user.html", users=storage.users(), admin_account_present=admin_account_present)
     else:
-        flash("You are not authorized to access this page")
+        flash("You are not authorized to access this page", "warning")
         return redirect("/")
 
 
 @app.route("/user/add", methods=['POST'])
 def user_add():
 
-    if "admin" in session and session["admin"]:
+    admin_account_present = False
+
+    for user in storage.users():
+        if storage.users()[user].admin:
+            admin_account_present = True
+            break
+
+    if not admin_account_present or ("admin" in session and session["admin"]):
         username = request.form["username"]
         password = bcrypt.hashpw(request.form["password"].encode("utf-8"), bcrypt.gensalt(config.bcrypt_rounds))
         is_admin = True if "is_admin" in request.form else False
@@ -98,7 +118,6 @@ def user_add():
 def suggest():
 
     return json.dumps(search.suggest(request.args.get("prefix")))
-
 
 @app.route("/document/<doc_id>")
 def document(doc_id):
