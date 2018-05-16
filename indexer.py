@@ -23,7 +23,7 @@ class Indexer:
             t.daemon = True
             t.start()
 
-            time.sleep(15)
+            time.sleep(25)
 
             if self.es.indices.exists(self.index_name):
                 print("Index is already setup")

@@ -38,19 +38,16 @@ def get_dir_size(path):
 def user_manage(user):
 
     if "admin" in session and session["admin"]:
-        pass
+        return render_template("user_manage.html", directories=storage.dirs(), user=storage.users()[user])
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
-
-    return user
-
 
 @app.route("/logout")
 def logout():
     session.pop("username")
     session.pop("admin")
-    flash("Successfully logged out", "success")
+    flash("Déconnection réussie", "success")
     return redirect("/")
 
 
@@ -63,9 +60,9 @@ def login():
         session["username"] = username
         session["admin"] = storage.users()[username].admin
 
-        flash("Successfully logged in", "success")
+        flash("Connexion réussie", "success")
     else:
-        flash("Invalid username or password", "danger")
+        flash("Nom d'utilisateur ou mot de passe invalide", "danger")
 
     return redirect("/")
 
@@ -83,8 +80,48 @@ def user_page():
     if not admin_account_present or ("admin" in session and session["admin"]):
         return render_template("user.html", users=storage.users(), admin_account_present=admin_account_present)
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
+
+
+@app.route("/user/<username>/set_access")
+def user_set_access(username):
+
+    if "admin" in session and session["admin"]:
+        dir_id = request.args["dir_id"]
+        user = storage.users()[username]
+
+        if request.args["access"] == "1":
+            user.readable_directories.add(int(dir_id))
+        else:
+            if int(dir_id) in user.readable_directories:
+                user.readable_directories.remove(int(dir_id))
+
+        storage.update_user(user)
+
+        flash("Permissions mises à jour", "success")
+        return redirect("/user/" + username)
+    else:
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
+        return redirect("/")
+
+
+@app.route("/user/<username>/set_admin")
+def user_set_admin(username):
+
+    if "admin" in session and session["admin"]:
+
+        user = storage.users()[username]
+
+        if user.username == session["username"]:
+            flash("Vous n'êtes pas autorisé à changer votre propre type de compte", "warning")
+        else:
+            user.admin = request.args["admin"] == "1"
+            storage.update_user(user)
+
+            flash("Permissions mises à jour", "success")
+
+        return redirect("/user/" + username)
 
 
 @app.route("/user/add", methods=['POST'])
@@ -104,20 +141,37 @@ def user_add():
 
         try:
             storage.save_user(User(username, password, is_admin))
-            flash("Created new user", "success")
+            flash("Nouvel utilisateur créé", "success")
         except DuplicateUserException:
-            flash("<strong>Couldn't create user</strong> Make sure that the username is unique", "danger")
+            flash("<strong>L'utilisateur n'as pas pu être créé</strong> Assurez vous que le nom d'utilisateur est unique", "danger")
 
         return redirect("/user")
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
+
+@app.route("/user/<username>/del")
+def user_del(username):
+
+    if "admin" in session and session["admin"]:
+
+        if session["username"] == username:
+            flash("Vous ne pouvez pas supprimer votre propre compte", "warning")
+            return redirect("/user/" + username)
+        else:
+            storage.remove_user(username)
+            flash("Utilisateur supprimé", "success")
+            return redirect("/user")
+    else:
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
+        return redirect("/")
 
 @app.route("/suggest")
 def suggest():
 
     return json.dumps(search.suggest(request.args.get("prefix")))
+
 
 @app.route("/document/<doc_id>")
 def document(doc_id):
@@ -171,14 +225,12 @@ def thumb(doc_id):
         if os.path.isfile(tn_path):
             return send_file(tn_path)
         else:
-            print("tn not found")
             default_thumbnail = BytesIO()
             Image.new("RGB", (255, 128), (0, 0, 0)).save(default_thumbnail, "JPEG")
             default_thumbnail.seek(0)
             return send_file(default_thumbnail, "image/jpeg")
 
     else:
-        print("doc is none")
         default_thumbnail = BytesIO()
         Image.new("RGB", (255, 128), (0, 0, 0)).save(default_thumbnail, "JPEG")
         default_thumbnail.seek(0)
@@ -189,14 +241,30 @@ def thumb(doc_id):
 def search_page():
 
     mime_map = search.get_mime_map()
-    mime_map.append({"id": "any", "text": "Any"})
+    mime_map.append({"id": "any", "text": "Tous"})
 
-    return render_template("search.html", directories=storage.dirs(), mime_map=mime_map)
+    directories = [storage.dirs()[x] for x in get_allowed_dirs(session["username"] if "username" in session else None)]
+
+    return render_template("search.html",
+                           directories=directories,
+                           mime_map=mime_map)
 
 
 @app.route("/list")
 def search_liste_page():
     return render_template("searchList.html")
+
+
+def get_allowed_dirs(username):
+
+    if config.allow_guests:
+        return [x for x in storage.dirs() if x.enabled]
+    else:
+        if username:
+            user = storage.users()[username]
+            return [x for x in storage.dirs() if storage.dirs()[x].enabled and x in user.readable_directories]
+        else:
+            return list()
 
 
 @app.route("/search", methods=['POST'])
@@ -212,19 +280,8 @@ def search_route():
     directories = request.json["directories"]
 
     # Remove disabled & non-existing directories
-    for search_directory in directories:
-        directory_exists = False
-
-        for dir_id in storage.dirs():
-            if search_directory == dir_id:
-                directory_exists = True
-
-                if not storage.dirs()[dir_id].enabled:
-                    directories.remove(search_directory)
-                break
-
-        if not directory_exists:
-            directories.remove(search_directory)
+    allowed_dirs = get_allowed_dirs(session["username"] if "username" in session else None)
+    directories = [x for x in directories if x in allowed_dirs]
 
     path = request.json["path"]
 
@@ -249,7 +306,7 @@ def dir_list():
     if "admin" in session and session["admin"]:
         return render_template("directory.html", directories=storage.dirs())
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
 
@@ -266,13 +323,13 @@ def directory_add():
             try:
                 d.set_default_options()
                 storage.save_directory(d)
-                flash("<strong>Created directory</strong>", "success")
+                flash("<strong>Dossier créé</strong>", "success")
             except DuplicateDirectoryException:
-                flash("<strong>Couldn't create directory</strong> Make sure that the path is unique", "danger")
+                flash("<strong>Le dossier n'a pas pu être créé</strong> Assurer vous de choisir un nom unique", "danger")
 
         return redirect("/directory")
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
 
@@ -287,7 +344,7 @@ def directory_manage(dir_id):
         return render_template("directory_manage.html", directory=directory, tn_size=tn_size,
                                tn_size_formatted=tn_size_formatted)
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
 
@@ -312,14 +369,14 @@ def directory_update(dir_id):
 
         try:
             storage.update_directory(updated_dir)
-            flash("<strong>Updated directory</strong>", "success")
+            flash("<strong>Dossier mis à jour</strong>", "success")
 
         except DuplicateDirectoryException:
-            flash("<strong>Couldn't update directory</strong> Make sure that the path is unique", "danger")
+            flash("<strong>Le dossier n'a pas pu être mis à jour</strong> Assurez vous que le chemin est unique", "danger")
 
         return redirect("/directory/" + str(dir_id))
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
 
@@ -335,7 +392,7 @@ def directory_update_opt(dir_id):
 
         return redirect("/directory/" + str(dir_id))
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
 
@@ -347,11 +404,11 @@ def directory_del(dir_id):
             shutil.rmtree("static/thumbnails/" + str(dir_id))
 
         storage.remove_directory(dir_id)
-        flash("<strong>Deleted directory</strong>", "success")
+        flash("<strong>Dossier supprimé</strong>", "success")
 
         return redirect("/directory")
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
 
@@ -374,10 +431,10 @@ def directory_reset(dir_id):
 
         search.delete_directory(dir_id)
 
-        flash("<strong>Reset directory options to default settings</strong>", "success")
+        flash("<strong>Options du dossier réinitialisés</strong>", "success")
         return redirect("directory/" + str(dir_id))
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
 
@@ -387,7 +444,7 @@ def task():
         return render_template("task.html", tasks=storage.tasks(), directories=storage.dirs(),
                                task_list=json.dumps(list(storage.tasks().keys())))
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
 
@@ -400,7 +457,7 @@ def get_current_task():
         else:
             return ""
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
 
@@ -410,11 +467,18 @@ def task_add():
         task_type = request.args.get("type")
         directory = request.args.get("directory")
 
-        storage.save_task(Task(task_type, directory))
+        if task_type not in ("1", "2"):
+            flash("Vous devez choisir un type de tâche", "danger")
+            return redirect("/task")
+
+        if directory.isdigit() and int(directory) in storage.dirs():
+            storage.save_task(Task(task_type, directory))
+        else:
+            flash("Vous devez choisir un dossier", "danger")
 
         return redirect("/task")
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
 
@@ -428,14 +492,14 @@ def task_del(task_id):
 
         return redirect("/task")
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
 
 @app.route("/reset_es")
 def reset_es():
     if "admin" in session and session["admin"]:
-        flash("Elasticsearch index has been reset. Modifications made in <b>config.py</b> have been applied.", "success")
+        flash("Elasticsearch a été réinitialisé, les changements dans <strong>config.py</strong> ont été appliqués", "success")
 
         tm.indexer.init()
         if os.path.exists("static/thumbnails"):
@@ -443,7 +507,7 @@ def reset_es():
 
         return redirect("/dashboard")
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
 
@@ -470,7 +534,7 @@ def dashboard():
                                index_size=humanfriendly.format_size(search.get_index_size()))
 
     else:
-        flash("You are not authorized to access this page", "warning")
+        flash("Vous n'êtes pas autorisé à accéder à cette page", "warning")
         return redirect("/")
 
 

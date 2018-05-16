@@ -73,7 +73,7 @@ function makeStatsCard(searchResult) {
     statsCardBody.setAttribute("class", "card-body");
 
     let stat = document.createElement("p");
-    stat.appendChild(document.createTextNode(searchResult["hits"]["total"] + " results in " + searchResult["took"] + "ms"));
+    stat.appendChild(document.createTextNode(searchResult["hits"]["total"] + " résultats en " + searchResult["took"] + "ms"));
 
     let sizeStat = document.createElement("span");
     sizeStat.appendChild(document.createTextNode(humanFileSize(searchResult["aggregations"]["total_size"]["value"])));
@@ -173,8 +173,8 @@ function gifOver(thumbnail, documentId) {
 
 function downloadPopover(element, documentId) {
     element.setAttribute("data-content",
-        '<a class="btn btn-sm btn-primary" href="/dl/'+ documentId +'"><i class="fas fa-download"></i> Download</a>' +
-        '<a class="btn btn-sm btn-success" style="margin-left:3px;" href="/file/'+ documentId + '" target="_blank"><i class="fas fa-eye"></i> View</a>');
+        '<a class="btn btn-sm btn-primary" href="/dl/'+ documentId +'"><i class="fas fa-download"></i> Télécharger</a>' +
+        '<a class="btn btn-sm btn-success" style="margin-left:3px;" href="/file/'+ documentId + '" target="_blank"><i class="fas fa-eye"></i> Consulter</a>');
     element.setAttribute("data-toggle", "popover");
     element.addEventListener("mouseover", function() {
         element.focus();
@@ -267,7 +267,7 @@ function createDocCard(hit) {
                 }
                 thumbnailOverlay.appendChild(resolutionBadge);
 
-                var format = hit["_source"]["format"];
+                var format = hit["_source"]["format_name"];
 
                 //Hover
                 if(format === "GIF") {
@@ -592,4 +592,4 @@ document.getElementById("pathBar").addEventListener("keyup", function () {
     searchQueued = true;
 });
 
-window.setInterval(search, 150);
+window.setInterval(search, 300);

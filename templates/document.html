@@ -10,7 +10,7 @@
 
             <div class="card-header">{{ doc.name }}</div>
             <div class="card-body">
-                <h3>Document properties</h3>
+                <h3>Propriétés du document</h3>
 
                 <table class="info-table table-hover table-striped">
                     <tbody>
@@ -26,21 +26,21 @@
 
                 <hr>
 
-                <h3>Raw json</h3>
+                <h3>JSON</h3>
                 <textarea class="form-control" style="min-height: 100px" readonly>{{ doc | tojson }}</textarea>
 
                 <hr>
 
-                <h3><a href="/directory/{{ directory.id }}">Directory</a></h3>
+                <h3><a href="/directory/{{ directory.id }}">Dossier</a></h3>
                 <table class="info-table table-hover table-striped">
                     <tbody>
 
                     <tr>
-                        <th>Path</th>
+                        <th>Chemin</th>
                         <td><pre>{{ directory.path }}</pre></td>
                     </tr>
                     <tr>
-                        <th>Name</th>
+                        <th>Nom</th>
                         <td><pre>{{ directory.name }}</pre></td>
                     </tr>
                     </tbody>

@@ -1,18 +1,71 @@
 {% extends "layout.html" %}
 
 {% set active_page = "user" %}
+{% block title %}Gestion utilisateur{% endblock title %}
 
 {% block body %}
 
     <div class="container">
         <div class="card">
-            <div class="card-header">Manage permission of <strong>{{ session["username"] }}</strong></div>
+            <div class="card-header">Gérer les permission de <strong>{{ user.username }}</strong></div>
             <div class="card-body">
 
+                <div class="row">
+                    <div class="col">
+                        <h5>Administrateur: </h5>
+                    </div>
+                    <div class="col">
+                        <form action="/user/{{ user.username }}/set_admin"  style="display: inline;margin-left: 6px;">
+                            <input type="hidden" name="admin" value="{{ "0" if user.admin else "1" }}">
+                            <button class="btn btn-sm {{ "btn-danger" if  user.admin else "btn-success" }}">
+                                <i class="far {{ "fa-check-square" if  user.admin else "fa-square" }}"></i>
+                                {{ "Rétrograder" if  user.admin else "Faire administrateur" }}
+                            </button>
+                            <input type="hidden" name="dir_id" value="{{ dir_id }}">
+                        </form>
+                    </div>
+                </div>
 
+                <hr>
+
+                <table class="info-table table-hover table-striped">
+                    <thead>
+                    <tr>
+                        <th>Dossier</th>
+                        <th>Accès</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for dir_id in directories %}
+                        <tr>
+                            <td>{{ directories[dir_id].name }}</td>
+                            <td><form action="/user/{{ user.username }}/set_access"  style="display: inline;margin-left: 6px;">
+                                <input type="hidden" name="access" value="{{ "0" if dir_id in user.readable_directories else "1" }}">
+                                <button class="btn btn-sm {{ "btn-danger" if  dir_id in user.readable_directories else "btn-success" }}">
+                                    <i class="far {{ "fa-check-square" if  dir_id in user.readable_directories else "fa-square" }}"></i>
+                                    {{ "Désactiver" if  dir_id in user.readable_directories else "Activer" }}
+                                </button>
+                                <input type="hidden" name="dir_id" value="{{ dir_id }}">
+                            </form></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+            <hr>
+
+                <button class="btn btn-danger" onclick="userDelete()">Supprimer le compte</button>
 
             </div>
         </div>
+
+        <script>
+        function userDelete() {
+            if (confirm("Êtes vous certain de vouloir supprimer ce compte?")) {
+                window.location = "/user/{{ user.username }}/del"
+            }
+        }
+    </script>
 
     </div>
 

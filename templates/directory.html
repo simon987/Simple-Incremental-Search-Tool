@@ -1,24 +1,24 @@
 {% extends "layout.html" %}
 {% set active_page = "directory" %}
 
-{% block title %}An Excellent title{% endblock title %}
+{% block title %}Liste des dossiers{% endblock title %}
 
 {% block body %}
     <div class="container">
 
         {# Add directory form #}
         <div class="card">
-            <div class="card-header">An excellent form</div>
+            <div class="card-header">Ajouter un dossier</div>
             <div class="card-body">
 
                 <form method="GET" action="/directory/add">
                     <div class="form-group">
-                        <input type="text" class="form-control" placeholder="Display name" name="name">
+                        <input type="text" class="form-control" placeholder="Nom du dossier" name="name">
                     </div>
                     <div class="form-group">
-                        <input type="text" class="form-control" placeholder="Absolute path" name="path">
+                        <input type="text" class="form-control" placeholder="Chemin absolu" name="path">
                     </div>
-                    <button type="submit" class="btn btn-success"><i class="fas fa-plus"></i> Add Directory</button>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-plus"></i> Ajouter</button>
                 </form>
 
             </div>
@@ -26,16 +26,15 @@
 
         {# List of directories #}
         <div class="card">
-            <div class="card-header">An excellent list</div>
+            <div class="card-header">Liste des dossiers</div>
             <div class="card-body">
 
                 <table class="info-table table-hover table-striped">
                     <thead>
                     <tr>
-                        <th>Display Name</th>
-                        <th>Path</th>
-                        <th>Enabled</th>
-                        <th>Last indexed</th>
+                        <th>Nom</th>
+                        <th>Chemin</th>
+                        <th>Activé</th>
                         <th>Action</th>
                     </tr>
                     </thead>
@@ -45,8 +44,7 @@
                             <td>{{ directories[dir].name }}</td>
                             <td style="word-break: break-all"><pre>{{ directories[dir].path }}</pre></td>
                             <td><i class="far {{ "fa-check-square" if directories[dir].enabled else "fa-square" }}"></i></td>
-                            <td>2018-02-21</td>
-                            <td><a href="directory/{{ dir }}" class="btn btn-primary"><i class="fas fa-cog"></i> Manage</a> </td>
+                            <td><a href="directory/{{ dir }}" class="btn btn-primary"><i class="fas fa-cog"></i> Gérer</a> </td>
                         </tr>
                     {% endfor %}
                     </tbody>
