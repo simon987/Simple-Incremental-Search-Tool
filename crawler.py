@@ -1,17 +1,19 @@
-import os
-from storage import Task, LocalStorage
 import json
+import os
+import shutil
 from multiprocessing import Process, Value
+
 from apscheduler.schedulers.background import BackgroundScheduler
+
+import config
+from indexer import Indexer
 from parsing import GenericFileParser, Md5CheckSumCalculator, ExtensionMimeGuesser, MediaFileParser, TextFileParser, \
     PictureFileParser, Sha1CheckSumCalculator, Sha256CheckSumCalculator, ContentMimeGuesser, MimeGuesser, FontParser, \
     PdfFileParser, DocxParser, EbookParser
-from indexer import Indexer
 from search import Search
-from thumbnail import ThumbnailGenerator
 from storage import Directory
-import shutil
-import config
+from storage import Task, LocalStorage
+from thumbnail import ThumbnailGenerator
 
 
 class RunningTask:
@@ -28,7 +30,8 @@ class RunningTask:
 
 class Crawler:
 
-    def __init__(self, enabled_parsers: list, mime_guesser: MimeGuesser=ExtensionMimeGuesser(), indexer=None, dir_id=0,
+    def __init__(self, enabled_parsers: list, mime_guesser: MimeGuesser = ExtensionMimeGuesser(), indexer=None,
+                 dir_id=0,
                  root_dir="/"):
         self.documents = []
         self.enabled_parsers = enabled_parsers
@@ -48,7 +51,7 @@ class Crawler:
 
         self.mime_guesser = mime_guesser
 
-    def crawl(self, root_dir: str, counter: Value=None):
+    def crawl(self, root_dir: str, counter: Value = None):
 
         document_counter = 0
 
@@ -179,10 +182,6 @@ class TaskManager:
                 self.start_task(self.storage.tasks()[i])
         else:
             if self.current_task.done.value == 1:
-
                 self.current_process.terminate()
                 self.storage.del_task(self.current_task.task.id)
                 self.current_task = None
-
-
-

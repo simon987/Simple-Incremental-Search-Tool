@@ -127,6 +127,7 @@ class GenericFileParser(FileParser):
     def __init__(self, checksum_calculators: list, root_dir: str):
         self.checksum_calculators = checksum_calculators
         self.root_dir = root_dir
+        self.root_dir_len = len(root_dir)+1
 
     def parse(self, full_path: str) -> dict:
         """
@@ -142,11 +143,12 @@ class GenericFileParser(FileParser):
         name, extension = os.path.splitext(name)
 
         info["size"] = file_stat.st_size
-        info["path"] = os.path.relpath(path, self.root_dir)
+        info["path"] = path[self.root_dir_len:]
         info["name"] = name
         info["extension"] = extension[1:]
         info["mtime"] = file_stat.st_mtime
 
+        # TODO: calculate all checksums at once
         for calculator in self.checksum_calculators:
             info[calculator.name] = calculator.checksum(full_path)
 
@@ -317,7 +319,6 @@ class FontParser(GenericFileParser):
                 warnings.simplefilter("ignore")
 
                 try:
-
                     font = TTFont(f)
 
                     if "name" in font:
