@@ -37,9 +37,8 @@ def get_dir_size(path):
 def user_manage(user):
     if "admin" in session and session["admin"]:
         return render_template("user_manage.html", directories=storage.dirs(), user=storage.users()[user])
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/logout")
@@ -77,9 +76,8 @@ def user_page():
 
     if not admin_account_present or ("admin" in session and session["admin"]):
         return render_template("user.html", users=storage.users(), admin_account_present=admin_account_present)
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/user/<username>/set_access")
@@ -98,9 +96,8 @@ def user_set_access(username):
 
         flash("Permissions mises à jour", "success")
         return redirect("/user/" + username)
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/user/<username>/set_admin")
@@ -142,9 +139,8 @@ def user_add():
                   "Make sure that the username is unique", "danger")
 
         return redirect("/user")
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/user/<username>/del")
@@ -154,13 +150,11 @@ def user_del(username):
         if session["username"] == username:
             flash("You cannot delete your own account", "warning")
             return redirect("/user/" + username)
-        else:
-            storage.remove_user(username)
-            flash("User deleted", "success")
-            return redirect("/user")
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+        storage.remove_user(username)
+        flash("User deleted", "success")
+        return redirect("/user")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/suggest")
@@ -179,7 +173,8 @@ def document(doc_id):
 
 
 @app.route("/dl/<doc_id>")
-def file(doc_id):
+def serve_file(doc_id):
+
     doc = search.get_doc(doc_id)["_source"]
     directory = storage.dirs()[doc["directory"]]
 
@@ -215,17 +210,16 @@ def thumb(doc_id):
         print(tn_path)
         if os.path.isfile(tn_path):
             return send_file(tn_path)
-        else:
-            default_thumbnail = BytesIO()
-            Image.new("RGB", (255, 128), (0, 0, 0)).save(default_thumbnail, "JPEG")
-            default_thumbnail.seek(0)
-            return send_file(default_thumbnail, "image/jpeg")
 
-    else:
         default_thumbnail = BytesIO()
         Image.new("RGB", (255, 128), (0, 0, 0)).save(default_thumbnail, "JPEG")
         default_thumbnail.seek(0)
         return send_file(default_thumbnail, "image/jpeg")
+
+    default_thumbnail = BytesIO()
+    Image.new("RGB", (255, 128), (0, 0, 0)).save(default_thumbnail, "JPEG")
+    default_thumbnail.seek(0)
+    return send_file(default_thumbnail, "image/jpeg")
 
 
 @app.route("/")
@@ -248,12 +242,10 @@ def search_liste_page():
 def get_allowed_dirs(username):
     if config.allow_guests:
         return [x for x in storage.dirs() if x.enabled]
-    else:
-        if username:
-            user = storage.users()[username]
-            return [x for x in storage.dirs() if storage.dirs()[x].enabled and x in user.readable_directories]
-        else:
-            return list()
+    if username:
+        user = storage.users()[username]
+        return [x for x in storage.dirs() if storage.dirs()[x].enabled and x in user.readable_directories]
+    return list()
 
 
 @app.route("/search", methods=['POST'])
@@ -291,9 +283,8 @@ def scroll_route():
 def dir_list():
     if "admin" in session and session["admin"]:
         return render_template("directory.html", directories=storage.dirs())
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/directory/add")
@@ -314,9 +305,8 @@ def directory_add():
                       "danger")
 
         return redirect("/directory")
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/directory/<int:dir_id>")
@@ -328,9 +318,8 @@ def directory_manage(dir_id):
 
         return render_template("directory_manage.html", directory=directory, tn_size=tn_size,
                                tn_size_formatted=tn_size_formatted)
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/directory/<int:dir_id>/update")
@@ -360,9 +349,8 @@ def directory_update(dir_id):
                   "danger")
 
         return redirect("/directory/" + str(dir_id))
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/directory/<int:dir_id>/update_opt")
@@ -375,9 +363,8 @@ def directory_update_opt(dir_id):
         storage.update_option(Option(opt_key, opt_value, dir_id, opt_id))
 
         return redirect("/directory/" + str(dir_id))
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/directory/<int:dir_id>/del")
@@ -391,9 +378,8 @@ def directory_del(dir_id):
         flash("<strong>Deleted folder</strong>", "success")
 
         return redirect("/directory")
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/directory/<int:dir_id>/reset")
@@ -416,9 +402,8 @@ def directory_reset(dir_id):
 
         flash("<strong>Reset directory options</strong>", "success")
         return redirect("directory/" + str(dir_id))
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/task")
@@ -426,9 +411,8 @@ def task():
     if "admin" in session and session["admin"]:
         return render_template("task.html", tasks=storage.tasks(), directories=storage.dirs(),
                                task_list=json.dumps(list(storage.tasks().keys())))
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/task/current")
@@ -437,11 +421,9 @@ def get_current_task():
 
         if tm and tm.current_task:
             return tm.current_task.to_json()
-        else:
-            return ""
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+        return ""
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/task/add")
@@ -460,9 +442,8 @@ def task_add():
             flash("You must choose a directory", "danger")
 
         return redirect("/task")
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/task/<int:task_id>/del")
@@ -474,9 +455,8 @@ def task_del(task_id):
             tm.cancel_task()
 
         return redirect("/task")
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/reset_es")
@@ -490,9 +470,8 @@ def reset_es():
             shutil.rmtree("static/thumbnails")
 
         return redirect("/dashboard")
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 @app.route("/dashboard")
@@ -517,9 +496,8 @@ def dashboard():
                                elasticsearch_url=config.elasticsearch_url,
                                index_size=humanfriendly.format_size(search.get_index_size()))
 
-    else:
-        flash("You are not authorized to access this page", "warning")
-        return redirect("/")
+    flash("You are not authorized to access this page", "warning")
+    return redirect("/")
 
 
 if __name__ == "__main__":
