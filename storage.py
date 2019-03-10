@@ -7,6 +7,9 @@ import config
 
 class CheckSumCalculator:
 
+    def __init__(self):
+        pass
+
     def checksum(self, string: str):
         return flask_bcrypt.generate_password_hash(string, config.bcrypt_rounds)
 
@@ -28,6 +31,7 @@ class User:
         self.username = username
         self.hashed_password = hashed_password
         self.admin = admin
+        self.readable_directories = set()
 
 
 class Option:
@@ -224,7 +228,15 @@ class LocalStorage:
             db_users = c.fetchall()
 
             for db_user in db_users:
-                self.cached_users[db_user[0]] = User(db_user[0], b"", bool(db_user[1]))
+                user = User(db_user[0], b"", bool(db_user[1]))
+
+                c.execute("SELECT username, directory_id FROM User_canRead_Directory WHERE username=?", (db_user[0],))
+                db_accesses = c.fetchall()
+
+                for db_access in db_accesses:
+                    user.readable_directories.add(db_access[1])
+
+                self.cached_users[db_user[0]] = user
 
             conn.close()
 
@@ -255,6 +267,12 @@ class LocalStorage:
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         c.execute("UPDATE User SET is_admin=? WHERE username=?", (user.admin, user.username))
+
+        c.execute("DELETE FROM User_canRead_Directory WHERE username=?", (user.username, ))
+        conn.commit()
+
+        for access in user.readable_directories:
+            c.execute("INSERT INTO User_canRead_Directory VALUES (?,?)", (user.username, access))
 
         c.close()
         conn.commit()

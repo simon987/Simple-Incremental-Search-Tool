@@ -34,11 +34,13 @@
                         <label for="directories" >Search in directories</label>
 
                         <select class="custom-select" id="directories" multiple size="6">
-                            {% for dir_id in directories %}
-                                {% if directories[dir_id].enabled %}
-                                    <option selected value="{{ directories[dir_id].id }}">{{ directories[dir_id].name }}</option>
-                                {% endif %}
-                            {% endfor %}
+                            {% if directories | length >  0%}
+                                {% for dir in directories %}
+                                    <option selected value="{{ dir.id }}">{{ dir.name }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option disabled>There are no active directories which you have access to</option>
+                            {% endif %}
                         </select>
                     </div>
 

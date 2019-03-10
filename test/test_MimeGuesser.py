@@ -12,7 +12,7 @@ class MimeGuesserTest(TestCase):
         guesser = ContentMimeGuesser()
 
         self.assertEqual("text/x-shellscript", guesser.guess_mime(dir_name + "/test_folder/test_utf8.sh"))
-        self.assertEqual("text/plain", guesser.guess_mime(dir_name + "/test_folder/more_books.json"))
+        self.assertTrue(guesser.guess_mime(dir_name + "/test_folder/more_books.json") in ["application/json", "text/plain"])
         self.assertEqual("application/java-archive", guesser.guess_mime(dir_name + "/test_folder/post.jar"))
         self.assertEqual("image/jpeg", guesser.guess_mime(dir_name + "/test_folder/sample_1.jpg"))
 
@@ -20,7 +20,8 @@ class MimeGuesserTest(TestCase):
 
         guesser = ExtensionMimeGuesser()
 
-        self.assertEqual("text/x-sh", guesser.guess_mime(dir_name + "/test_folder/test_utf8.sh"))
+        self.assertTrue(guesser.guess_mime(dir_name + "/test_folder/test_utf8.sh") in ["text/x-sh", "application/x-sh"])
         self.assertEqual("application/json", guesser.guess_mime(dir_name + "/test_folder/more_books.json"))
-        self.assertEqual("application/java-archive", guesser.guess_mime(dir_name + "/test_folder/post.jar"))
+        self.assertTrue(guesser.guess_mime(dir_name + "/test_folder/post.jar")
+                        in ["application/java-archive", "application/x-java-archive"])
         self.assertEqual("image/jpeg", guesser.guess_mime(dir_name + "/test_folder/sample_1.jpg"))

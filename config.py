@@ -25,6 +25,9 @@ bcrypt_rounds = 14
 # sqlite3 database path
 db_path = "./local_storage.db"
 
+# Set to true to allow guests to search any directory
+allow_guests = False
+
 try:
     import cairosvg
     cairosvg = True

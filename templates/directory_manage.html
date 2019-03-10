@@ -1,7 +1,7 @@
-{%  extends "layout.html" %}
+{% extends "layout.html" %}
 {% set active_page = "directory" %}
 
-{% block title %}An excellent title{% endblock title %}
+{% block title %}{{ directory.name }}{% endblock title %}
 
 {% block body %}
 
@@ -75,7 +75,7 @@
                     </tr>
 
                     <tr onclick="modifyPath()">
-                        <th style="width: 20%">Path</th>Task
+                        <th style="width: 20%">Path</th>
                         <td>
                             <pre id="path" title="Click to update">{{ directory.path }}</pre>
                         </td>
@@ -84,7 +84,8 @@
                     <tr>
                         <th style="width: 20%">Enabled</th>
                         <td>
-                            <form action="/directory/{{ directory.id }}/update"  style="display: inline;margin-left: 6px;">
+                            <form action="/directory/{{ directory.id }}/update"
+                                  style="display: inline;margin-left: 6px;">
                                 <input type="hidden" name="enabled" value="{{ "0" if directory.enabled else "1" }}">
                                 <button class="btn btn-sm {{ "btn-danger" if directory.enabled else "btn-success" }}">
                                     <i class="far {{ "fa-check-square" if directory.enabled else "fa-square" }}"></i>
@@ -96,7 +97,9 @@
 
                     <tr>
                         <th>Thumbnail cache size</th>
-                        <td><pre>{{ tn_size_formatted }} ({{ tn_size }} bytes)</pre></td>
+                        <td>
+                            <pre>{{ tn_size_formatted }} ({{ tn_size }} bytes)</pre>
+                        </td>
                     </tr>
                 </table>
             </div>
@@ -112,7 +115,7 @@
                     <form action="/task/add" class="p-2">
                         <input type="hidden" value="1" name="type">
                         <input type="hidden" value="{{ directory.id }}" name="directory">
-                        <button class="btn btn-primary" href="/task/" value="Generate thumbnails">
+                        <button class="btn btn-primary" href="/task/">
                             <i class="fas fa-book"></i> Generate index
                         </button>
                     </form>
@@ -120,7 +123,7 @@
                     <form action="/task/add" class="p-2">
                         <input type="hidden" value="2" name="type">
                         <input type="hidden" value="{{ directory.id }}" name="directory">
-                        <button class="btn btn-primary" href="/task/" value="Generate thumbnails">
+                        <button class="btn btn-primary" href="/task/">
                             <i class="far fa-images"></i> Generate thumbnails
                         </button>
                     </form>
@@ -140,7 +143,8 @@
         </div>
 
         <div class="card">
-            <div class="card-header">Options <a href="#" style="float:right">Learn more <i class="fas fa-external-link-alt"></i></a></div>
+            <div class="card-header">Options <a href="#" style="float:right">Learn more <i
+                    class="fas fa-external-link-alt"></i></a></div>
             <div class="card-body">
                 <table class="info-table table-striped table-hover">
                     <thead>
@@ -154,7 +158,9 @@
 
                         <tr>
                             <td style="width: 30%"><span>{{ option.key }}</span></td>
-                            <td onclick="modifyVal({{ option.id }}, '{{ option.key }}')" title="Click to update"><pre id="val-{{ option.id }}">{{ option.value }}</pre></td>
+                            <td onclick="modifyVal({{ option.id }}, '{{ option.key }}')" title="Click to update">
+                                <pre id="val-{{ option.id }}">{{ option.value }}</pre>
+                            </td>
                         </tr>
 
                     {% endfor %}

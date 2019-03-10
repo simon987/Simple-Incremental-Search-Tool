@@ -1,10 +1,9 @@
 import json
+
 import elasticsearch
-from threading import Thread
-import subprocess
 import requests
+
 import config
-import platform
 
 
 class Indexer:
@@ -14,30 +13,12 @@ class Indexer:
         self.index_name = index
         self.es = elasticsearch.Elasticsearch()
 
-        try:
-            requests.head("http://localhost:9200")
-
-        except requests.exceptions.ConnectionError:
-            import time
-            t = Thread(target=Indexer.run_elasticsearch)
-            t.daemon = True
-            t.start()
-
-            time.sleep(15)
-
-            if self.es.indices.exists(self.index_name):
-                print("Index is already setup")
-            else:
-                print("First time setup...")
-                self.init()
-
-    @staticmethod
-    def run_elasticsearch():
-
-        if platform.system() == "Windows":
-            subprocess.Popen(["elasticsearch\\bin\\elasticsearch.bat"])
+        requests.head("http://localhost:9200")
+        if self.es.indices.exists(self.index_name):
+            print("Index is already setup")
         else:
-            subprocess.Popen(["elasticsearch/bin/elasticsearch"])
+            print("First time setup...")
+            self.init()
 
     @staticmethod
     def create_bulk_index_string(docs: list, directory: int):
