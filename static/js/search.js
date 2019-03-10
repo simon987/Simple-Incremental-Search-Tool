@@ -73,7 +73,7 @@ function makeStatsCard(searchResult) {
     statsCardBody.setAttribute("class", "card-body");
 
     let stat = document.createElement("p");
-    stat.appendChild(document.createTextNode(searchResult["hits"]["total"] + " résultats en " + searchResult["took"] + "ms"));
+    stat.appendChild(document.createTextNode(searchResult["hits"]["total"] + " results in " + searchResult["took"] + "ms"));
 
     let sizeStat = document.createElement("span");
     sizeStat.appendChild(document.createTextNode(humanFileSize(searchResult["aggregations"]["total_size"]["value"])));
@@ -267,7 +267,7 @@ function createDocCard(hit) {
                 }
                 thumbnailOverlay.appendChild(resolutionBadge);
 
-                var format = hit["_source"]["format_name"];
+                var format = hit["_source"]["format"];
 
                 //Hover
                 if(format === "GIF") {

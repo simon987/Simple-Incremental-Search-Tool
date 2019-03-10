@@ -1,4 +1,4 @@
-{%  extends "layout.html" %}
+{% extends "layout.html" %}
 {% set active_page = "directory" %}
 
 {% block title %}{{ directory.name }}{% endblock title %}
@@ -63,40 +63,43 @@
 
         <div class="card">
 
-            <div class="card-header">Sommaire</div>
+            <div class="card-header">Summary</div>
             <div class="card-body">
 
                 <table class="info-table">
                     <tr onclick="modifyDisplayName()">
-                        <th style="width: 20%">Nom</th>
+                        <th style="width: 20%">Display name</th>
                         <td>
-                            <pre id="display-name" title="Cliquer pour mettre à jour">{{ directory.name }}</pre>
+                            <pre id="display-name" title="Click to update">{{ directory.name }}</pre>
                         </td>
                     </tr>
 
                     <tr onclick="modifyPath()">
-                        <th style="width: 20%">Chemin</th>
+                        <th style="width: 20%">Path</th>
                         <td>
-                            <pre id="path" title="Cliquer pour mettre à jour">{{ directory.path }}</pre>
+                            <pre id="path" title="Click to update">{{ directory.path }}</pre>
                         </td>
                     </tr>
 
                     <tr>
-                        <th style="width: 20%">Activé</th>
+                        <th style="width: 20%">Enabled</th>
                         <td>
-                            <form action="/directory/{{ directory.id }}/update"  style="display: inline;margin-left: 6px;">
+                            <form action="/directory/{{ directory.id }}/update"
+                                  style="display: inline;margin-left: 6px;">
                                 <input type="hidden" name="enabled" value="{{ "0" if directory.enabled else "1" }}">
                                 <button class="btn btn-sm {{ "btn-danger" if directory.enabled else "btn-success" }}">
                                     <i class="far {{ "fa-check-square" if directory.enabled else "fa-square" }}"></i>
-                                    {{ "Désactiver" if directory.enabled else "Activer" }}
+                                    {{ "Disable" if directory.enabled else "Enable" }}
                                 </button>
                             </form>
                         </td>
                     </tr>
 
                     <tr>
-                        <th>Taille des miniatures</th>
-                        <td><pre>{{ tn_size_formatted }} ({{ tn_size }} octets)</pre></td>
+                        <th>Thumbnail cache size</th>
+                        <td>
+                            <pre>{{ tn_size_formatted }} ({{ tn_size }} bytes)</pre>
+                        </td>
                     </tr>
                 </table>
             </div>
@@ -113,7 +116,7 @@
                         <input type="hidden" value="1" name="type">
                         <input type="hidden" value="{{ directory.id }}" name="directory">
                         <button class="btn btn-primary" href="/task/">
-                            <i class="fas fa-book"></i> Générer l'index
+                            <i class="fas fa-book"></i> Generate index
                         </button>
                     </form>
 
@@ -121,7 +124,7 @@
                         <input type="hidden" value="2" name="type">
                         <input type="hidden" value="{{ directory.id }}" name="directory">
                         <button class="btn btn-primary" href="/task/">
-                            <i class="far fa-images"></i> Générer les miniatures
+                            <i class="far fa-images"></i> Generate thumbnails
                         </button>
                     </form>
 
@@ -129,8 +132,8 @@
                         <button class="btn dropdown-toggle btn-danger" data-toggle="dropdown">Action</button>
 
                         <div class="dropdown-menu">
-                            <a class="dropdown-item" href="/directory/{{ directory.id }}/del">Supprimer le dossier</a>
-                            <a class="dropdown-item" href="/directory/{{ directory.id }}/reset">Réinitialiser aux paramètres par défaut</a>
+                            <a class="dropdown-item" href="/directory/{{ directory.id }}/del">Delete directory</a>
+                            <a class="dropdown-item" href="/directory/{{ directory.id }}/reset">Reset to default settings</a>
                         </div>
                     </div>
                 </div>
@@ -140,13 +143,14 @@
         </div>
 
         <div class="card">
-            <div class="card-header">Options <a href="#" style="float:right">En savoir plus <i class="fas fa-external-link-alt"></i></a></div>
+            <div class="card-header">Options <a href="#" style="float:right">Learn more <i
+                    class="fas fa-external-link-alt"></i></a></div>
             <div class="card-body">
                 <table class="info-table table-striped table-hover">
                     <thead>
                     <tr>
                         <th>Option</th>
-                        <th>Valeur</th>
+                        <th>Value</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -154,7 +158,9 @@
 
                         <tr>
                             <td style="width: 30%"><span>{{ option.key }}</span></td>
-                            <td onclick="modifyVal({{ option.id }}, '{{ option.key }}')" title="Cliquer pour modifier"><pre id="val-{{ option.id }}">{{ option.value }}</pre></td>
+                            <td onclick="modifyVal({{ option.id }}, '{{ option.key }}')" title="Click to update">
+                                <pre id="val-{{ option.id }}">{{ option.value }}</pre>
+                            </td>
                         </tr>
 
                     {% endfor %}

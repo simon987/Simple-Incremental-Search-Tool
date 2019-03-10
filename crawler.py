@@ -144,9 +144,9 @@ class TaskManager:
                      TextFileParser(chksum_calcs, int(directory.get_option("TextFileContentLength")), directory.path),
                      PictureFileParser(chksum_calcs, directory.path),
                      FontParser(chksum_calcs, directory.path),
-                     PdfFileParser(chksum_calcs, int(directory.get_option("TextFileContentLength")), directory.path),  # todo get content len from other opt
-                     DocxParser(chksum_calcs, int(directory.get_option("TextFileContentLength")), directory.path),  # todo get content len from other opt
-                     EbookParser(chksum_calcs, int(directory.get_option("TextFileContentLength")), directory.path)],  # todo get content len from other opt
+                     PdfFileParser(chksum_calcs, int(directory.get_option("PdfFileContentLength")), directory.path),
+                     DocxParser(chksum_calcs, int(directory.get_option("SpreadsheetContentLength")), directory.path),
+                     EbookParser(chksum_calcs, int(directory.get_option("EbookContentLength")), directory.path)],
                     mime_guesser, self.indexer, directory.id)
         c.crawl(directory.path, counter)
 

@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% set active_page = "task" %}
 
-{% block title %}Tâches{% endblock title %}
+{% block title %}Tasks{% endblock title %}
 
 {% block body %}
 
@@ -43,23 +43,23 @@
     <div class="container">
 
         <div class="card">
-            <div class="card-header">Ajouter un tâche</div>
+            <div class="card-header">Add task</div>
             <div class="card-body">
                 <form class="form-inline" action="/task/add">
-                    <select title="Sélectionner le type de tâche" class="form-control" id="type" name="type">
-                        <option hidden>Créer un tâche...</option>
-                        <option value="1">d'indexation</option>
-                        <option value="2">de génération des miniatures</option>
+                    <select title="Select task type" class="form-control" id="type" name="type">
+                        <option hidden>Create task...</option>
+                        <option value="1">Indexing</option>
+                        <option value="2">Thumnail Generation</option>
                     </select>
 
-                    <select title="Sélectionner le dossier" class="form-control" id="directory" name="directory" >
-                        <option hidden>Pour le dossier...</option>
+                    <select title="Select directory" class="form-control" id="directory" name="directory" >
+                        <option hidden>For directory...</option>
                         {% for dir_id in directories %}
                             <option value="{{ dir_id }}">{{ directories[dir_id].name }}</option>
                         {% endfor %}
                     </select>
 
-                    <button class="form-control btn btn-success"><i class="fas fa-plus"></i> Ajouter</button>
+                    <button class="form-control btn btn-success"><i class="fas fa-plus"></i> Add</button>
                 </form>
             </div>
         </div>
@@ -81,7 +81,7 @@
 
                             if (currentTask.total === 0) {
 
-                                document.getElementById("task-label-" + currentTask.id).innerHTML = "Calcul du nombre de fichier...";
+                                document.getElementById("task-label-" + currentTask.id).innerHTML = "Calculating file count...";
 
                             } else {
                                 let bar = document.getElementById("task-bar-" + currentTask.id);
@@ -107,16 +107,16 @@
         </script>
 
         <div class="card">
-            <div class="card-header">Tâches en cours</div>
+            <div class="card-header">Ongoing tasks</div>
             <div class="card-body">
                 {% for task_id in tasks | sort() %}
                     <div class="task-wrapper container-fluid">
                         <a class="task-name" href="/directory/{{ tasks[task_id].dir_id }}">{{ directories[tasks[task_id].dir_id].name }}</a>
                         <span class="task-info"> -
                             {% if tasks[task_id].type == 1 %}
-                            Indexation
+                            Indexing
                             {% else %}
-                            Génération des miniatures
+                            Thumbnail generation
                             {% endif %}
                         </span>
 
@@ -124,12 +124,12 @@
                             <div class="container-fluid p-2">
                                 <div class="progress">
                                     <div id="task-bar-{{ task_id }}" class="progress-bar" role="progressbar" style="width: 0;">
-                                        <span id="task-label-{{ task_id }}">En attente</span>
+                                        <span id="task-label-{{ task_id }}">Queued</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="p-2"><a class="btn btn-danger" href="/task/{{ task_id }}/del">Annuler</a></div>
+                            <div class="p-2"><a class="btn btn-danger" href="/task/{{ task_id }}/del">Cancel</a></div>
                         </div>
                     </div>
                 {% endfor %}

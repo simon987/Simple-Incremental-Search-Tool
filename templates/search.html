@@ -2,7 +2,7 @@
 
 {% set active_page = "search" %}
 
-{% block title %}Recherche{% endblock title %}
+{% block title %}Search{% endblock title %}
 
 {% block imports %}
     <link href="/static/css/search.css" rel="stylesheet" type="text/css">
@@ -14,24 +14,24 @@
         <div class="card">
             <div class="card-body">
                 <div class="form-group">
-                    <input id="pathBar" type="search" class="form-control" placeholder="Filtrer le chemin">
+                    <input id="pathBar" type="search" class="form-control" placeholder="Filter path">
                 </div>
                 <div class="input-group">
                     <div class="input-group-prepend">
                         <div class="input-group-text">
-                            <span onclick="document.getElementById('barToggle').click()">Doit être égal&nbsp</span>
-                            <input title="Basculer entre 'Devrait' and 'doit' être égal" type="checkbox" id="barToggle" onclick="toggleSearchBar()" checked>
+                            <span onclick="document.getElementById('barToggle').click()">Must match&nbsp</span>
+                            <input title="Toggle between 'Should' and 'Must' match mode" type="checkbox" id="barToggle" onclick="toggleSearchBar()" checked>
                         </div>
                     </div>
-                    <input id="searchBar" type="search" class="form-control" placeholder="Recherche">
+                    <input id="searchBar" type="search" class="form-control" placeholder="Search">
 
                 </div>
 
-                <input title="Taille des fichiers" id="sizeSlider" name="size">
+                <input title="File size" id="sizeSlider" name="size">
 
                 <div class="row">
                     <div class="col">
-                        <label for="directories" >Rechercher dans les dossiers</label>
+                        <label for="directories" >Search in directories</label>
 
                         <select class="custom-select" id="directories" multiple size="6">
                             {% if directories | length >  0%}
@@ -39,13 +39,13 @@
                                     <option selected value="{{ dir.id }}">{{ dir.name }}</option>
                                 {% endfor %}
                             {% else %}
-                                <option disabled>Il n'existe aucun dossier actif auquel vous avez accès</option>
+                                <option disabled>There are no active directories which you have access to</option>
                             {% endif %}
                         </select>
                     </div>
 
                     <div class="col">
-                        <label>Types de fichier</label>
+                        <label>Mime types</label>
 
                         <div class="tree"></div>
                     </div>

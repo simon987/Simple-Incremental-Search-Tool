@@ -7,6 +7,9 @@ import config
 
 class CheckSumCalculator:
 
+    def __init__(self):
+        pass
+
     def checksum(self, string: str):
         return flask_bcrypt.generate_password_hash(string, config.bcrypt_rounds)
 
