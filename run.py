@@ -241,7 +241,7 @@ def search_liste_page():
 
 def get_allowed_dirs(username):
     if config.allow_guests:
-        return [x for x in storage.dirs() if x.enabled]
+        return [x for x in storage.dirs() if storage.dirs()[x].enabled]
     if username:
         user = storage.users()[username]
         return [x for x in storage.dirs() if storage.dirs()[x].enabled and x in user.readable_directories]

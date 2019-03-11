@@ -29,6 +29,7 @@ Once the web server is running, you can connect to the search interface by typin
 
 * Download and install [Elasticsearch](https://www.elastic.co/downloads/elasticsearch)
 
+* Edit settings in [config.py](https://github.com/simon987/Simple-Incremental-Search-Tool/blob/master/config.py) (Default values are ok in most cases)
 ```bash
 git clone https://github.com/simon987/Simple-Incremental-Search-Tool
 

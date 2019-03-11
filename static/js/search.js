@@ -267,7 +267,7 @@ function createDocCard(hit) {
                 }
                 thumbnailOverlay.appendChild(resolutionBadge);
 
-                var format = hit["_source"]["format"];
+                var format = hit["_source"]["format_name"];
 
                 //Hover
                 if(format === "GIF") {
@@ -429,6 +429,8 @@ window.addEventListener("scroll", function () {
                     if (hits.length !== 0) {
                         coolingDown = false;
                     }
+                } else if (this.status === 500) {
+                    window.location.reload()
                 }
             };
             xhttp.open("GET", "/scroll?scroll_id=" + scroll_id, true);

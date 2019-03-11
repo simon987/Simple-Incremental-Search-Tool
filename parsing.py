@@ -143,7 +143,7 @@ class GenericFileParser(FileParser):
         name, extension = os.path.splitext(name)
 
         info["size"] = file_stat.st_size
-        info["path"] = path[self.root_dir_len:]
+        info["path"] = os.path.relpath(path, self.root_dir)
         info["name"] = name
         info["extension"] = extension[1:]
         info["mtime"] = file_stat.st_mtime

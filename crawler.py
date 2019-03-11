@@ -2,6 +2,8 @@ import json
 import os
 import shutil
 from multiprocessing import Process, Value
+from queue import Queue, Empty, Full
+from threading import Thread
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -51,39 +53,42 @@ class Crawler:
 
         self.mime_guesser = mime_guesser
 
-    def crawl(self, root_dir: str, counter: Value = None):
+    def crawl(self, root_dir: str, counter: Value = None, total_files = None):
 
-        document_counter = 0
+        in_q = Queue(50000)  # TODO: get from config?
+        out_q = Queue()
+
+        threads = []
+        print("Creating %d threads" % (config.parse_threads,))
+        for _ in range(config.parse_threads):
+            t = Thread(target=self.parse_file, args=[in_q, out_q, ])
+            threads.append(t)
+            t.start()
+
+        indexer_thread = Thread(target=self.index_file, args=[out_q, counter, ])
+        indexer_thread.start()
 
         for root, dirs, files in os.walk(root_dir):
-
             for filename in files:
-                full_path = os.path.join(root, filename)
+                while True:
+                    try:
+                        in_q.put(os.path.join(root, filename), timeout=10)
+                        if total_files:
+                            total_files.value += 1
+                        break
+                    except Full:
+                        continue
 
-                mime = self.mime_guesser.guess_mime(full_path)
+        in_q.join()
+        out_q.join()
 
-                parser = self.ext_map.get(mime, self.default_parser)
+        for _ in threads:
+            in_q.put(None)
+        out_q.put(None)
 
-                document_counter += 1
-                if document_counter >= config.index_every:
-                    document_counter = 0
-
-                    self.indexer.index(self.documents, self.dir_id)
-                    self.documents.clear()
-
-                try:
-                    if counter:
-                        counter.value += 1
-
-                    doc = parser.parse(full_path)
-                    doc["mime"] = mime
-
-                    self.documents.append(doc)
-                except FileNotFoundError:
-                    continue  # File was deleted
-
-        if self.indexer is not None and len(self.documents) > 0:
-            self.indexer.index(self.documents, self.dir_id)
+        indexer_thread.join()
+        for t in threads:
+            t.join()
 
     def countFiles(self, root_dir: str):
         count = 0
@@ -92,6 +97,61 @@ class Crawler:
             count += len(files)
 
         return count
+
+    def parse_file(self, in_q: Queue, out_q: Queue):
+
+        while True:
+            try:
+                full_path = in_q.get(timeout=1)
+                if full_path is None:
+                    break
+            except Empty:
+                break
+
+            try:
+                mime = self.mime_guesser.guess_mime(full_path)
+                parser = self.ext_map.get(mime, self.default_parser)
+
+                doc = parser.parse(full_path)
+                doc["mime"] = mime
+                out_q.put(doc)
+            finally:
+                in_q.task_done()
+
+    def index_file(self, out_q: Queue, count: Value):
+
+        if self.indexer is None:
+            while True:
+                try:
+                    doc = out_q.get(timeout=10)
+                    if doc is None:
+                        break
+                except Empty:
+                    break
+                self.documents.append(doc)
+                out_q.task_done()
+            return
+
+        while True:
+            try:
+                doc = out_q.get(timeout=10)
+                if doc is None:
+                    break
+            except Empty:
+                break
+
+            try:
+                self.documents.append(doc)
+                count.value += 1
+
+                if count.value % config.index_every == 0:
+                    self.indexer.index(self.documents, self.dir_id)
+                    self.documents.clear()
+            except:
+                pass
+            finally:
+                out_q.task_done()
+        self.indexer.index(self.documents, self.dir_id)
 
 
 class TaskManager:
@@ -112,10 +172,10 @@ class TaskManager:
 
         if task.type == Task.INDEX:
             c = Crawler([])
-            self.current_task.total_files.value = c.countFiles(directory.path)
-
-            self.current_process = Process(target=self.execute_crawl, args=(directory, self.current_task.parsed_files,
-                                                                            self.current_task.done))
+            self.current_process = Process(target=self.execute_crawl, args=(directory,
+                                                                            self.current_task.parsed_files,
+                                                                            self.current_task.done,
+                                                                            self.current_task.total_files))
 
         elif task.type == Task.GEN_THUMBNAIL:
             self.current_process = Process(target=self.execute_thumbnails, args=(directory,
@@ -124,7 +184,7 @@ class TaskManager:
                                                                                  self.current_task.done))
         self.current_process.start()
 
-    def execute_crawl(self, directory: Directory, counter: Value, done: Value):
+    def execute_crawl(self, directory: Directory, counter: Value, done: Value, total_files: Value):
 
         Search("changeme").delete_directory(directory.id)
 
@@ -151,7 +211,7 @@ class TaskManager:
                      DocxParser(chksum_calcs, int(directory.get_option("SpreadsheetContentLength")), directory.path),
                      EbookParser(chksum_calcs, int(directory.get_option("EbookContentLength")), directory.path)],
                     mime_guesser, self.indexer, directory.id)
-        c.crawl(directory.path, counter)
+        c.crawl(directory.path, counter, total_files)
 
         done.value = 1
 
@@ -161,14 +221,12 @@ class TaskManager:
         if os.path.exists(dest_path):
             shutil.rmtree(dest_path)
 
-        docs = list(Search("changeme").get_all_documents(directory.id))
-
-        total_files.value = len(docs)
+        docs = Search("changeme").get_all_documents(directory.id)
 
         tn_generator = ThumbnailGenerator(int(directory.get_option("ThumbnailSize")),
                                           int(directory.get_option("ThumbnailQuality")),
                                           directory.get_option("ThumbnailColor"))
-        tn_generator.generate_all(docs, dest_path, counter, directory)
+        tn_generator.generate_all(docs, dest_path, counter, directory, total_files)
 
         done.value = 1
 

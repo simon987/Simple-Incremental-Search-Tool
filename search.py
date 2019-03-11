@@ -149,7 +149,7 @@ class Search:
             "aggs": {
                 "total_size": {"sum": {"field": "size"}}
             },
-            "size": 40}, index=self.index_name, scroll="3m")
+            "size": 40}, index=self.index_name, scroll="30m")
 
         return page
 

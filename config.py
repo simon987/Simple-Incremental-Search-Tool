@@ -26,7 +26,14 @@ bcrypt_rounds = 14
 db_path = "./local_storage.db"
 
 # Set to true to allow guests to search any directory
-allow_guests = False
+allow_guests = True
+
+# Number of threads used for parsing
+parse_threads = 8
+
+# Number of threads used for thumbnail generation
+tn_threads = 32
+
 
 try:
     import cairosvg
@@ -34,4 +41,4 @@ try:
 except:
     cairosvg = False
 
-VERSION = "1.0a"
+VERSION = "1.1a"

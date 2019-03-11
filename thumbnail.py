@@ -1,6 +1,10 @@
+from queue import Full, Empty
+from threading import Thread
+
 from PIL import Image
 import os
 from multiprocessing import Value, Process
+from queue import Queue
 import ffmpeg
 import config
 
@@ -22,10 +26,11 @@ class ThumbnailGenerator:
 
         if mime == "image/svg+xml" and config.cairosvg:
 
+            tmpfile = dest_path + "_tmp"
             try:
-                p = Process(target=cairosvg.svg2png, kwargs={"url": path, "write_to": "tmp"})
+                p = Process(target=cairosvg.svg2png, kwargs={"url": path, "write_to": tmpfile})
                 p.start()
-                p.join(1)
+                p.join(5)
 
                 if p.is_alive():
                     p.terminate()
@@ -35,8 +40,8 @@ class ThumbnailGenerator:
             except Exception:
                 print("Couldn't make thumbnail for " + path)
 
-            if os.path.exists("tmp"):
-                os.remove("tmp")
+            if os.path.exists(tmpfile):
+                os.remove(tmpfile)
 
         elif mime.startswith("image"):
 
@@ -59,11 +64,16 @@ class ThumbnailGenerator:
             if os.path.exists("tmp"):
                 os.remove("tmp")
 
-    def generate_all(self, docs, dest_path,  counter: Value=None, directory=None):
+    def worker(self, in_q: Queue, counter: Value, dest_path, directory):
 
-        os.makedirs(dest_path, exist_ok=True)
+        while True:
+            try:
+                doc = in_q.get(timeout=1)
+                if doc is None:
+                    break
+            except Empty:
+                break
 
-        for doc in docs:
             extension = "" if doc["_source"]["extension"] == "" else "." + doc["_source"]["extension"]
             full_path = os.path.join(directory.path, doc["_source"]["path"], doc["_source"]["name"] + extension)
 
@@ -72,6 +82,35 @@ class ThumbnailGenerator:
 
             if counter is not None:
                 counter.value += 1
+
+            in_q.task_done()
+
+    def generate_all(self, docs, dest_path, counter: Value = None, directory=None, total_count=None):
+
+        os.makedirs(dest_path, exist_ok=True)
+
+        in_q = Queue(50000)  # TODO: load from config?
+        threads = []
+        for _ in range(config.tn_threads):
+            t = Thread(target=self.worker, args=[in_q, counter, dest_path, directory])
+            threads.append(t)
+            t.start()
+
+        for doc in docs:
+            while True:
+                try:
+                    in_q.put(doc, timeout=10)
+                    if total_count:
+                        total_count.value += 1
+                    break
+                except Full:
+                    continue
+
+        in_q.join()
+        for _ in threads:
+            in_q.put(None)
+        for t in threads:
+            t.join()
 
     def generate_image(self, path, dest_path):
 
