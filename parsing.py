@@ -169,7 +169,7 @@ class MediaFileParser(GenericFileParser):
             "audio/mid", "audio/mpeg", "audio/mp4", "audio/x-aiff",
             "audio/ogg", "audio/vorbis" "audio/x-realaudio", "audio/x-wav",
             "audio/flac", "audio/x-monkeys-audio", "audio/wav", "audio/wave",
-            "audio/x-wav", "audio/x-ms-wma"
+            "audio/x-wav", "audio/x-ms-wma", "audio/x-flac",
         ]
 
     def parse(self, full_path: str):

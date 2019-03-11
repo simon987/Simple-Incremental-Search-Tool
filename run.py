@@ -13,6 +13,7 @@ from crawler import TaskManager
 from search import Search
 from storage import Directory, Option, Task, User
 from storage import LocalStorage, DuplicateDirectoryException, DuplicateUserException
+from thumbnail import ThumbnailGenerator
 
 app = Flask(__name__)
 app.secret_key = "A very secret key"
@@ -174,7 +175,6 @@ def document(doc_id):
 
 @app.route("/dl/<doc_id>")
 def serve_file(doc_id):
-
     doc = search.get_doc(doc_id)["_source"]
     directory = storage.dirs()[doc["directory"]]
 
@@ -205,16 +205,24 @@ def thumb(doc_id):
     doc = search.get_doc(doc_id)
 
     if doc is not None:
-
-        tn_path = os.path.join("static/thumbnails/", str(doc["_source"]["directory"]), doc_id)
-        print(tn_path)
+        dest_path = "static/thumbnails/" + str(doc["_source"]["directory"])
+        os.makedirs(dest_path, exist_ok=True)
+        tn_path = os.path.join(dest_path, doc_id)
         if os.path.isfile(tn_path):
             return send_file(tn_path)
 
-        default_thumbnail = BytesIO()
-        Image.new("RGB", (255, 128), (0, 0, 0)).save(default_thumbnail, "JPEG")
-        default_thumbnail.seek(0)
-        return send_file(default_thumbnail, "image/jpeg")
+        directory = storage.dirs()[doc["_source"]["directory"]]
+        extension = "" if doc["_source"]["extension"] is None or doc["_source"]["extension"] == "" else \
+            "." + doc["_source"]["extension"]
+        full_path = os.path.join(directory.path,
+                                 doc["_source"]["path"],
+                                 doc["_source"]["name"] + extension)
+        tn_generator = ThumbnailGenerator(int(directory.get_option("ThumbnailSize")),
+                                          int(directory.get_option("ThumbnailQuality")),
+                                          directory.get_option("ThumbnailColor"))
+        tn_generator.generate(full_path, tn_path, doc["_source"]["mime"])
+        if os.path.isfile(tn_path):
+            return send_file(tn_path)
 
     default_thumbnail = BytesIO()
     Image.new("RGB", (255, 128), (0, 0, 0)).save(default_thumbnail, "JPEG")

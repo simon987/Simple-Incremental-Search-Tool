@@ -24,9 +24,9 @@ class ThumbnailGenerator:
         if mime is None:
             return
 
+        tmpfile = dest_path + "_tmp"
         if mime == "image/svg+xml" and config.cairosvg:
 
-            tmpfile = dest_path + "_tmp"
             try:
                 p = Process(target=cairosvg.svg2png, kwargs={"url": path, "write_to": tmpfile})
                 p.start()
@@ -54,15 +54,15 @@ class ThumbnailGenerator:
             try:
                 (ffmpeg.
                  input(path)
-                 .output("tmp", vframes=1, f="image2", loglevel="error")
+                 .output(tmpfile, vframes=1, f="image2", loglevel="error")
                  .run()
                  )
-                self.generate_image("tmp", dest_path)
+                self.generate_image(tmpfile, dest_path)
             except Exception:
                 print("Couldn't make thumbnail for " + path)
 
-            if os.path.exists("tmp"):
-                os.remove("tmp")
+            if os.path.exists(tmpfile):
+                os.remove(tmpfile)
 
     def worker(self, in_q: Queue, counter: Value, dest_path, directory):
 
@@ -114,25 +114,28 @@ class ThumbnailGenerator:
 
     def generate_image(self, path, dest_path):
 
-        with open(path, "rb") as image_file:
-            with Image.open(image_file) as image:
+        try:
+            with open(path, "rb") as image_file:
+                with Image.open(image_file) as image:
 
-                # https://stackoverflow.com/questions/43978819
-                if image.mode == "I;16":
-                    image.mode = "I"
-                    image.point(lambda i: i * (1. / 256)).convert('L')
+                    # https://stackoverflow.com/questions/43978819
+                    if image.mode == "I;16":
+                        image.mode = "I"
+                        image.point(lambda i: i * (1. / 256)).convert('L')
 
-                image.thumbnail(self.size, Image.BICUBIC)
-                canvas = Image.new("RGB", image.size, self.color)
+                    image.thumbnail(self.size, Image.BICUBIC)
+                    canvas = Image.new("RGB", image.size, self.color)
 
-                if image.mode in ('RGBA', 'LA') or (image.mode == 'P' and 'transparency' in image.info):
+                    if image.mode in ('RGBA', 'LA') or (image.mode == 'P' and 'transparency' in image.info):
 
-                    try:
-                        canvas.paste(image, mask=image.split()[-1])
-                    except ValueError:
+                        try:
+                            canvas.paste(image, mask=image.split()[-1])
+                        except ValueError:
+                            canvas.paste(image)
+                    else:
                         canvas.paste(image)
-                else:
-                    canvas.paste(image)
 
-                canvas.save(dest_path, "JPEG", quality=self.quality, optimize=True)
-                canvas.close()
+                    canvas.save(dest_path, "JPEG", quality=self.quality, optimize=True)
+                    canvas.close()
+        except Exception as e:
+            print(e)
