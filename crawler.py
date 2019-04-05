@@ -115,6 +115,8 @@ class Crawler:
                 doc = parser.parse(full_path)
                 doc["mime"] = mime
                 out_q.put(doc)
+            except:
+                pass
             finally:
                 in_q.task_done()
 
@@ -123,7 +125,7 @@ class Crawler:
         if self.indexer is None:
             while True:
                 try:
-                    doc = out_q.get(timeout=10)
+                    doc = out_q.get(timeout=120)
                     if doc is None:
                         break
                 except Empty:
@@ -134,10 +136,11 @@ class Crawler:
 
         while True:
             try:
-                doc = out_q.get(timeout=10)
+                doc = out_q.get(timeout=120)
                 if doc is None:
                     break
             except Empty:
+                print("outq empty")
                 break
 
             try:
@@ -171,7 +174,6 @@ class TaskManager:
         directory = self.storage.dirs()[task.dir_id]
 
         if task.type == Task.INDEX:
-            c = Crawler([])
             self.current_process = Process(target=self.execute_crawl, args=(directory,
                                                                             self.current_task.parsed_files,
                                                                             self.current_task.done,
@@ -236,8 +238,9 @@ class TaskManager:
     def check_new_task(self):
 
         if self.current_task is None:
-            for i in sorted(self.storage.tasks(), reverse=True):
-                self.start_task(self.storage.tasks()[i])
+            tasks = self.storage.tasks()
+            if len(tasks) > 0:
+                self.start_task(tasks[sorted(tasks)[0]])
         else:
             if self.current_task.done.value == 1:
                 self.current_process.terminate()

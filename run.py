@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import shutil
 from io import BytesIO
@@ -18,6 +19,10 @@ from thumbnail import ThumbnailGenerator
 app = Flask(__name__)
 app.secret_key = "A very secret key"
 storage = LocalStorage(config.db_path)
+
+# Disable flask logging
+flaskLogger = logging.getLogger('werkzeug')
+flaskLogger.setLevel(logging.ERROR)
 
 tm = TaskManager(storage)
 search = Search("changeme")

@@ -128,9 +128,9 @@ class Search:
                     condition: {
                         "multi_match": {
                             "query": query,
-                            "fields": ["name", "content", "album", "artist", "title", "genre",
-                                       "album_artist", "font_name"],
-                            "operator": "and"
+                            "fields": ["name^3", "name.nGram^2", "content", "album^4", "artist^4", "title^4", "genre",
+                                       "album_artist^4", "font_name^2"],
+                            "operator": "or"
                         }
                     },
                     "filter": filters
@@ -141,15 +141,16 @@ class Search:
             ],
             "highlight": {
                 "fields": {
-                    "content": {"pre_tags": ["<span class='hl'>"], "post_tags": ["</span>"]},
-                    "name": {"pre_tags": ["<span class='hl'>"], "post_tags": ["</span>"]},
-                    "font_name": {"pre_tags": ["<span class='hl'>"], "post_tags": ["</span>"]},
+                    "content": {"pre_tags": ["<mark>"], "post_tags": ["</mark>"]},
+                    "name": {"pre_tags": ["<mark>"], "post_tags": ["</mark>"]},
+                    "name.nGram": {"pre_tags": ["<mark>"], "post_tags": ["</mark>"]},
+                    "font_name": {"pre_tags": ["<mark>"], "post_tags": ["</mark>"]},
                 }
             },
             "aggs": {
                 "total_size": {"sum": {"field": "size"}}
             },
-            "size": 40}, index=self.index_name, scroll="30m")
+            "size": 40}, index=self.index_name, scroll="15m")
 
         return page
 
@@ -189,14 +190,18 @@ class Search:
             return None
 
     def delete_directory(self, dir_id):
+        while True:
+            try:
+                self.es.delete_by_query(body={"query": {
+                    "bool": {
+                        "filter": {"term": {"directory": dir_id}}
+                    }
+                }}, index=self.index_name, request_timeout=60)
+                break
+            except elasticsearch.exceptions.ConflictError:
+                print("Error: multiple delete tasks at the same time")
+            except Exception as e:
+                print(e)
 
-        try:
-            self.es.delete_by_query(body={"query": {
-                "bool": {
-                    "filter": {"term": {"directory": dir_id}}
-                }
-            }}, index=self.index_name)
-        except elasticsearch.exceptions.ConflictError:
-            print("Error: multiple delete tasks at the same time")
 
 

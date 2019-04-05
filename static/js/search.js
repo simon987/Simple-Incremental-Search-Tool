@@ -206,6 +206,8 @@ function createDocCard(hit) {
 
     if (hit.hasOwnProperty("highlight") && hit["highlight"].hasOwnProperty("name")) {
         title.insertAdjacentHTML('afterbegin', hit["highlight"]["name"] + extension);
+    } else if (hit.hasOwnProperty("highlight") && hit["highlight"].hasOwnProperty("name.nGram")) {
+        title.insertAdjacentHTML('afterbegin', hit["highlight"]["name.nGram"] + extension);
     } else {
         title.appendChild(document.createTextNode(hit["_source"]["name"] + extension));
     }
@@ -490,7 +492,6 @@ function search() {
                         pathAutoComplete.push(searchResult["suggest"]["path"][0]["options"][i].text)
                     }
                 }
-
 
                 //Setup page
                 let resultContainer = makeResultContainer();

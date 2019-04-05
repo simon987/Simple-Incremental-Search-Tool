@@ -94,8 +94,10 @@ body {overflow-y:scroll;}
     }
 }
 
-.hl {
+mark {
     background: #fff217;
+    border-radius: 0;
+    padding: 1px 0;
 }
 
 .content-div {

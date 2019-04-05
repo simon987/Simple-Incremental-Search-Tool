@@ -57,7 +57,8 @@ class Indexer:
             "analysis": {"tokenizer": {"path_tokenizer": {"type": "path_hierarchy"}}}},
             index=self.index_name)
         self.es.indices.put_settings(body={
-            "analysis": {"tokenizer": {"my_nGram_tokenizer": {"type": "nGram", "min_gram": config.nGramMin, "max_gram": config.nGramMax}}}},
+            "analysis": {"tokenizer": {
+                "my_nGram_tokenizer": {"type": "nGram", "min_gram": config.nGramMin, "max_gram": config.nGramMax}}}},
             index=self.index_name)
         self.es.indices.put_settings(body={
             "analysis": {"analyzer": {"path_analyser": {"tokenizer": "path_tokenizer", "filter": ["lowercase"]}}}},
@@ -83,7 +84,9 @@ class Indexer:
             "mtime": {"type": "integer"},
             "size": {"type": "long"},
             "directory": {"type": "short"},
-            "name": {"analyzer": "my_nGram", "type": "text"},
+            "name": {"analyzer": "content_analyser", "type": "text",
+                     "fields": {"nGram": {"type": "text", "analyzer": "my_nGram"}}
+                     },
             "album": {"analyzer": "my_nGram", "type": "text"},
             "artist": {"analyzer": "my_nGram", "type": "text"},
             "title": {"analyzer": "my_nGram", "type": "text"},

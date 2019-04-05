@@ -21,7 +21,7 @@ nGramMax = 3
 elasticsearch_url = "http://localhost:9200"
 
 # Password hashing
-bcrypt_rounds = 14
+bcrypt_rounds = 13
 # sqlite3 database path
 db_path = "./local_storage.db"
 
@@ -29,7 +29,7 @@ db_path = "./local_storage.db"
 allow_guests = True
 
 # Number of threads used for parsing
-parse_threads = 8
+parse_threads = 32
 
 # Number of threads used for thumbnail generation
 tn_threads = 32
