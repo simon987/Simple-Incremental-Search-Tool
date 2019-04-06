@@ -212,7 +212,7 @@ function createDocCard(hit) {
         title.appendChild(document.createTextNode(hit["_source"]["name"] + extension));
     }
 
-    title.setAttribute("title", hit["_source"]["path"] + hit["_source"]["name"] + extension);
+    title.setAttribute("title", hit["_source"]["path"] + "/" + hit["_source"]["name"] + extension);
     docCard.appendChild(title);
 
     let tagContainer = document.createElement("div");
