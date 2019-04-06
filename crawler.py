@@ -136,7 +136,7 @@ class Crawler:
 
         while True:
             try:
-                doc = out_q.get(timeout=120)
+                doc = out_q.get(timeout=600)
                 if doc is None:
                     break
             except Empty:
