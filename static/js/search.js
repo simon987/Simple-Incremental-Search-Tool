@@ -24,7 +24,7 @@ new InspireTreeDOM(tree, {
 tree.select();
 tree.node("any").deselect();
 
-tree.on("node.click", function(event, node, handler) {
+tree.on("node.click", function (event, node, handler) {
     event.preventTreeDefault();
 
     if (node.id === "any") {
@@ -44,23 +44,23 @@ new autoComplete({
     selector: '#pathBar',
     minChars: 1,
     delay: 75,
-    renderItem: function (item){
+    renderItem: function (item) {
         return '<div class="autocomplete-suggestion" data-val="' + item + '">' + item + '</div>';
     },
-    source: async function(term, suggest) {
+    source: async function (term, suggest) {
         term = term.toLowerCase();
 
         const choices = await getPathChoices();
 
         let matches = [];
-        for (let i=0; i<choices.length; i++) {
+        for (let i = 0; i < choices.length; i++) {
             if (~choices[i].toLowerCase().indexOf(term)) {
                 matches.push(choices[i]);
             }
         }
         suggest(matches);
     },
-    onSelect: function() {
+    onSelect: function () {
         searchQueued = true;
     }
 });
@@ -73,7 +73,9 @@ function makeStatsCard(searchResult) {
     statsCardBody.setAttribute("class", "card-body");
 
     let stat = document.createElement("p");
-    stat.appendChild(document.createTextNode(searchResult["hits"]["total"] + " results in " + searchResult["took"] + "ms"));
+    const totalHits = searchResult["hits"]["total"].hasOwnProperty("value")
+        ? searchResult["hits"]["total"]["value"] : searchResult["hits"]["total"];
+    stat.appendChild(document.createTextNode(totalHits + " results in " + searchResult["took"] + "ms"));
 
     let sizeStat = document.createElement("span");
     sizeStat.appendChild(document.createTextNode(humanFileSize(searchResult["aggregations"]["total_size"]["value"])));
@@ -97,20 +99,20 @@ function makeResultContainer() {
  */
 function humanFileSize(bytes) {
 
-    if(bytes === 0) {
+    if (bytes === 0) {
         return "? B"
     }
 
     let thresh = 1000;
-    if(Math.abs(bytes) < thresh) {
+    if (Math.abs(bytes) < thresh) {
         return bytes + ' B';
     }
-    let units = ['kB','MB','GB','TB','PB','EB','ZB','YB'];
+    let units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
     let u = -1;
     do {
         bytes /= thresh;
         ++u;
-    } while(Math.abs(bytes) >= thresh && u < units.length - 1);
+    } while (Math.abs(bytes) >= thresh && u < units.length - 1);
 
     return bytes.toFixed(1) + ' ' + units[u];
 }
@@ -118,15 +120,21 @@ function humanFileSize(bytes) {
 /**
  * https://stackoverflow.com/questions/6312993
  */
-function humanTime (sec_num) {
+function humanTime(sec_num) {
     sec_num = Math.floor(sec_num);
-    let hours   = Math.floor(sec_num / 3600);
+    let hours = Math.floor(sec_num / 3600);
     let minutes = Math.floor((sec_num - (hours * 3600)) / 60);
     let seconds = sec_num - (hours * 3600) - (minutes * 60);
 
-    if (hours   < 10) {hours   = "0" + hours;}
-    if (minutes < 10) {minutes = "0" + minutes;}
-    if (seconds < 10) {seconds = "0" + seconds;}
+    if (hours < 10) {
+        hours = "0" + hours;
+    }
+    if (minutes < 10) {
+        minutes = "0" + minutes;
+    }
+    if (seconds < 10) {
+        seconds = "0" + seconds;
+    }
     return hours + ":" + minutes + ":" + seconds;
 }
 
@@ -134,7 +142,7 @@ function humanTime (sec_num) {
 function initPopover() {
     $('[data-toggle="popover"]').popover({
         trigger: "focus",
-        delay: { "show": 0, "hide": 100 },
+        delay: {"show": 0, "hide": 100},
         placement: "bottom",
         html: true
     });
@@ -152,7 +160,7 @@ function gifOver(thumbnail, documentId) {
 
         thumbnail.mouseStayedOver = true;
 
-        window.setTimeout(function() {
+        window.setTimeout(function () {
             if (thumbnail.mouseStayedOver) {
                 thumbnail.removeEventListener('mouseover', callee, false);
 
@@ -163,7 +171,7 @@ function gifOver(thumbnail, documentId) {
 
     });
 
-    thumbnail.addEventListener("mouseout", function() {
+    thumbnail.addEventListener("mouseout", function () {
         //Reset timer
         thumbnail.mouseStayedOver = false;
         thumbnail.setAttribute("src", "/thumb/" + documentId);
@@ -173,10 +181,10 @@ function gifOver(thumbnail, documentId) {
 
 function downloadPopover(element, documentId) {
     element.setAttribute("data-content",
-        '<a class="btn btn-sm btn-primary" href="/dl/'+ documentId +'"><i class="fas fa-download"></i> Download</a>' +
-        '<a class="btn btn-sm btn-success" style="margin-left:3px;" href="/file/'+ documentId + '" target="_blank"><i class="fas fa-eye"></i> View</a>');
+        '<a class="btn btn-sm btn-primary" href="/dl/' + documentId + '"><i class="fas fa-download"></i> Download</a>' +
+        '<a class="btn btn-sm btn-success" style="margin-left:3px;" href="/file/' + documentId + '" target="_blank"><i class="fas fa-eye"></i> View</a>');
     element.setAttribute("data-toggle", "popover");
-    element.addEventListener("mouseover", function() {
+    element.addEventListener("mouseover", function () {
         element.focus();
     });
 }
@@ -242,7 +250,7 @@ function createDocCard(hit) {
                 thumbnail.setAttribute("controls", "");
                 thumbnail.setAttribute("preload", "none");
                 thumbnail.setAttribute("poster", "/thumb/" + hit["_id"]);
-                thumbnail.addEventListener("dblclick", function() {
+                thumbnail.addEventListener("dblclick", function () {
                     thumbnail.webkitRequestFullScreen();
                 });
 
@@ -272,7 +280,7 @@ function createDocCard(hit) {
                 var format = hit["_source"]["format_name"];
 
                 //Hover
-                if(format === "GIF") {
+                if (format === "GIF") {
                     gifOver(thumbnail, hit["_id"]);
                 }
                 break;
@@ -302,10 +310,12 @@ function createDocCard(hit) {
 
                 break;
             case "image": {
-                let formatTag = document.createElement("span");
-                formatTag.setAttribute("class", "badge badge-pill badge-image");
-                formatTag.appendChild(document.createTextNode(format));
-                tags.push(formatTag);
+                if (format !== undefined) {
+                    let formatTag = document.createElement("span");
+                    formatTag.setAttribute("class", "badge badge-pill badge-image");
+                    formatTag.appendChild(document.createTextNode(format));
+                    tags.push(formatTag);
+                }
             }
                 break;
             case "audio": {
@@ -315,9 +325,7 @@ function createDocCard(hit) {
                     formatTag.appendChild(document.createTextNode(hit["_source"]["format_long_name"]));
                     tags.push(formatTag);
                 }
-
             }
-
                 break;
             case "text": {
                 let formatTag = document.createElement("span");
@@ -387,13 +395,15 @@ function createDocCard(hit) {
 
 function makePageIndicator(searchResult) {
     let pageIndicator = document.createElement("div");
-    pageIndicator.appendChild(document.createTextNode(docCount + " / " +searchResult["hits"]["total"]));
+    const totalHits = searchResult["hits"]["total"].hasOwnProperty("value")
+        ? searchResult["hits"]["total"]["value"] : searchResult["hits"]["total"];
+    pageIndicator.appendChild(document.createTextNode(docCount + " / " + totalHits));
     return pageIndicator;
 }
 
 
 function insertHits(resultContainer, hits) {
-    for (let i = 0 ; i < hits.length; i++) {
+    for (let i = 0; i < hits.length; i++) {
         resultContainer.appendChild(createDocCard(hits[i]));
         docCount++;
     }
@@ -409,7 +419,7 @@ window.addEventListener("scroll", function () {
             //load next page
 
             let xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
+            xhttp.onreadystatechange = function () {
                 if (this.readyState === 4 && this.status === 200) {
 
                     let searchResult = JSON.parse(this.responseText);
@@ -449,7 +459,7 @@ function getSelectedMimeTypes() {
 
     for (let i = 0; i < selected.length; i++) {
 
-        if(selected[i].id === "any") {
+        if (selected[i].id === "any") {
             return "any"
         }
 
@@ -468,7 +478,7 @@ function search() {
         searchQueued = false;
 
         //Clear old search results
-        let searchResults =  document.getElementById("searchResults");
+        let searchResults = document.getElementById("searchResults");
         while (searchResults.firstChild) {
             searchResults.removeChild(searchResults.firstChild);
         }
@@ -476,7 +486,7 @@ function search() {
         let query = searchBar.value;
 
         let xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
+        xhttp.onreadystatechange = function () {
             if (this.readyState === 4 && this.status === 200) {
 
                 let searchResult = JSON.parse(this.responseText);
@@ -542,7 +552,7 @@ $("#sizeSlider").ionRangeSlider({
     drag_interval: true,
     prettify: function (num) {
 
-        if(num === 0) {
+        if (num === 0) {
             return "0 B"
         } else if (num >= 3684) {
             return humanFileSize(num * num * num) + "+";
@@ -550,11 +560,11 @@ $("#sizeSlider").ionRangeSlider({
 
         return humanFileSize(num * num * num)
     },
-    onChange: function(e) {
+    onChange: function (e) {
         size_min = (e.from * e.from * e.from);
         size_max = (e.to * e.to * e.to);
 
-        if (e.to >=  3684) {
+        if (e.to >= 3684) {
             size_max = 10000000000000;
         }
 
@@ -566,12 +576,13 @@ $("#sizeSlider").ionRangeSlider({
 function updateDirectories() {
     let selected = $('#directories').find('option:selected');
     selectedDirs = [];
-    $(selected).each(function(){
+    $(selected).each(function () {
         selectedDirs.push(parseInt($(this).val()));
     });
 
     searchQueued = true;
 }
+
 document.getElementById("directories").addEventListener("change", updateDirectories);
 updateDirectories();
 searchQueued = false;
@@ -581,7 +592,7 @@ function getPathChoices() {
     return new Promise(getPaths => {
 
         let xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
+        xhttp.onreadystatechange = function () {
             if (this.readyState === 4 && this.status === 200) {
                 getPaths(JSON.parse(xhttp.responseText))
             }

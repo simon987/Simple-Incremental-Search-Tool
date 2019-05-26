@@ -5,7 +5,8 @@ default_options = {
     "ThumbnailColor": "FF00FF",
     "TextFileContentLength": "2000",
     "PdfFileContentLength": "2000",
-    "SpreadsheetContentLength": "2000",
+    "DocxContentLength": "2000",
+    "SpreadSheetContentLength": "2000",
     "EbookContentLength": "2000",
     "MimeGuesser": "extension",  # extension, content
     "CheckSumCalculators": "",  # md5, sha1, sha256
@@ -19,6 +20,7 @@ index_every = 10000
 nGramMin = 3
 nGramMax = 3
 elasticsearch_url = "http://localhost:9200"
+elasticsearch_index = "sist"
 
 # Password hashing
 bcrypt_rounds = 13
@@ -41,4 +43,4 @@ try:
 except:
     cairosvg = False
 
-VERSION = "1.1a"
+VERSION = "1.2a"

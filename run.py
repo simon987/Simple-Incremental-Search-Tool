@@ -25,7 +25,7 @@ flaskLogger = logging.getLogger('werkzeug')
 flaskLogger.setLevel(logging.ERROR)
 
 tm = TaskManager(storage)
-search = Search("changeme")
+search = Search(config.elasticsearch_index)
 
 
 def get_dir_size(path):

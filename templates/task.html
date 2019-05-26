@@ -81,7 +81,7 @@
 
                             if (currentTask.total === 0) {
 
-                                document.getElementById("task-label-" + currentTask.id).innerHTML = "Calculating file count...";
+                                document.getElementById("task-label-" + currentTask.id).innerHTML = "Initializing...";
 
                             } else {
                                 let bar = document.getElementById("task-bar-" + currentTask.id);
@@ -90,6 +90,8 @@
 
                                 if (percent === 100) {
                                     bar.classList.add("bg-success")
+                                } else {
+                                    bar.classList.remove("bg-success")
                                 }
                             }
 

@@ -36,7 +36,7 @@ class ThumbnailGenerator:
                     p.terminate()
                     print("Timed out: " + path)
                 else:
-                    self.generate_image("tmp", dest_path)
+                    self.generate_image(tmpfile, dest_path)
             except Exception:
                 print("Couldn't make thumbnail for " + path)
 

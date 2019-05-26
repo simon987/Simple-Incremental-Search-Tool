@@ -1,9 +1,11 @@
 import json
 import os
+
 import elasticsearch
 import requests
-import config
 from elasticsearch import helpers
+
+import config
 
 
 class Search:
@@ -14,9 +16,8 @@ class Search:
 
         try:
             requests.head(config.elasticsearch_url)
-            print("elasticsearch is already running")
         except:
-            print("elasticsearch is not running")
+            print("elasticsearch is not running!")
 
         self.search_iterator = None
 
@@ -33,7 +34,6 @@ class Search:
             info = requests.get("http://localhost:9200/" + self.index_name + "/_stats")
 
             if info.status_code == 200:
-
                 parsed_info = json.loads(info.text)
 
                 return int(parsed_info["indices"][self.index_name]["total"]["store"]["size_in_bytes"])
@@ -171,8 +171,9 @@ class Search:
 
         path_list = []
 
-        for option in suggestions["suggest"]["path"][0]["options"]:
-            path_list.append(option["_source"]["path"])
+        if "suggest" in suggestions:
+            for option in suggestions["suggest"]["path"][0]["options"]:
+                path_list.append(option["_source"]["path"])
 
         return path_list
 
@@ -202,6 +203,3 @@ class Search:
                 print("Error: multiple delete tasks at the same time")
             except Exception as e:
                 print(e)
-
-
-

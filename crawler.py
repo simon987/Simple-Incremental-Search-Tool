@@ -11,7 +11,7 @@ import config
 from indexer import Indexer
 from parsing import GenericFileParser, Md5CheckSumCalculator, ExtensionMimeGuesser, MediaFileParser, TextFileParser, \
     PictureFileParser, Sha1CheckSumCalculator, Sha256CheckSumCalculator, ContentMimeGuesser, MimeGuesser, FontParser, \
-    PdfFileParser, DocxParser, EbookParser
+    PdfFileParser, DocxParser, EbookParser, SpreadSheetParser
 from search import Search
 from storage import Directory
 from storage import Task, LocalStorage
@@ -53,7 +53,7 @@ class Crawler:
 
         self.mime_guesser = mime_guesser
 
-    def crawl(self, root_dir: str, counter: Value = None, total_files = None):
+    def crawl(self, root_dir: str, counter: Value = None, total_files=None):
 
         in_q = Queue(50000)  # TODO: get from config?
         out_q = Queue()
@@ -154,7 +154,8 @@ class Crawler:
                 pass
             finally:
                 out_q.task_done()
-        self.indexer.index(self.documents, self.dir_id)
+        if self.documents:
+            self.indexer.index(self.documents, self.dir_id)
 
 
 class TaskManager:
@@ -162,7 +163,7 @@ class TaskManager:
         self.current_task = None
         self.storage = storage
         self.current_process = None
-        self.indexer = Indexer("changeme")
+        self.indexer = Indexer(config.elasticsearch_index)
 
         scheduler = BackgroundScheduler()
         scheduler.add_job(self.check_new_task, "interval", seconds=0.5)
@@ -188,34 +189,54 @@ class TaskManager:
 
     def execute_crawl(self, directory: Directory, counter: Value, done: Value, total_files: Value):
 
-        Search("changeme").delete_directory(directory.id)
+        Search(config.elasticsearch_index).delete_directory(directory.id)
 
+        chksum_calcs = self.make_checksums_list(directory)
+
+        mime_guesser = ExtensionMimeGuesser() if directory.get_option("MimeGuesser") == "extension" \
+            else ContentMimeGuesser()
+
+        c = Crawler(self.make_parser_list(chksum_calcs, directory), mime_guesser, self.indexer, directory.id)
+        c.crawl(directory.path, counter, total_files)
+
+        done.value = 1
+
+    @staticmethod
+    def make_checksums_list(directory):
         chksum_calcs = []
-
         for arg in directory.get_option("CheckSumCalculators").split(","):
-
             if arg.strip() == "md5":
                 chksum_calcs.append(Md5CheckSumCalculator())
             elif arg.strip() == "sha1":
                 chksum_calcs.append(Sha1CheckSumCalculator())
             elif arg.strip() == "sha256":
                 chksum_calcs.append(Sha256CheckSumCalculator())
+        return chksum_calcs
 
-        mime_guesser = ExtensionMimeGuesser() if directory.get_option("MimeGuesser") == "extension" \
-            else ContentMimeGuesser()
-
-        c = Crawler([GenericFileParser(chksum_calcs, directory.path),
-                     MediaFileParser(chksum_calcs, directory.path),
-                     TextFileParser(chksum_calcs, int(directory.get_option("TextFileContentLength")), directory.path),
-                     PictureFileParser(chksum_calcs, directory.path),
-                     FontParser(chksum_calcs, directory.path),
-                     PdfFileParser(chksum_calcs, int(directory.get_option("PdfFileContentLength")), directory.path),
-                     DocxParser(chksum_calcs, int(directory.get_option("SpreadsheetContentLength")), directory.path),
-                     EbookParser(chksum_calcs, int(directory.get_option("EbookContentLength")), directory.path)],
-                    mime_guesser, self.indexer, directory.id)
-        c.crawl(directory.path, counter, total_files)
-
-        done.value = 1
+    @staticmethod
+    def make_parser_list(chksum_calcs, directory):
+        p = [p.strip() for p in directory.get_option("FileParsers").split(",")]
+        parsers = [GenericFileParser(chksum_calcs, directory.path)]
+        if "media" in p:
+            parsers.append(MediaFileParser(chksum_calcs, directory.path))
+        if "text" in p:
+            parsers.append(
+                TextFileParser(chksum_calcs, int(directory.get_option("TextFileContentLength")), directory.path))
+        if "picture" in p:
+            parsers.append(PictureFileParser(chksum_calcs, directory.path))
+        if "font" in p:
+            parsers.append(FontParser(chksum_calcs, directory.path))
+        if "pdf" in p:
+            parsers.append(
+                PdfFileParser(chksum_calcs, int(directory.get_option("PdfFileContentLength")), directory.path))
+        if "docx" in p:
+            parsers.append(DocxParser(chksum_calcs, int(directory.get_option("DocxContentLength")), directory.path))
+        if "spreadsheet" in p:
+            parsers.append(
+                SpreadSheetParser(chksum_calcs, int(directory.get_option("SpreadSheetContentLength")), directory.path))
+        if "ebook" in p:
+            parsers.append(EbookParser(chksum_calcs, int(directory.get_option("EbookContentLength")), directory.path))
+        return parsers
 
     def execute_thumbnails(self, directory: Directory, total_files: Value, counter: Value, done: Value):
 
@@ -223,7 +244,7 @@ class TaskManager:
         if os.path.exists(dest_path):
             shutil.rmtree(dest_path)
 
-        docs = Search("changeme").get_all_documents(directory.id)
+        docs = Search(config.elasticsearch_index).get_all_documents(directory.id)
 
         tn_generator = ThumbnailGenerator(int(directory.get_option("ThumbnailSize")),
                                           int(directory.get_option("ThumbnailQuality")),

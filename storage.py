@@ -1,7 +1,9 @@
-import sqlite3
 import os
-import flask_bcrypt
+import sqlite3
 import time
+
+import flask_bcrypt
+
 import config
 
 
@@ -39,7 +41,7 @@ class Option:
     Data structure to hold a directory option
     """
 
-    def __init__(self, key: str, value: str, dir_id: int=None, opt_id: int = None):
+    def __init__(self, key: str, value: str, dir_id: int = None, opt_id: int = None):
         self.key = key
         self.value = value
         self.id = opt_id
@@ -50,6 +52,7 @@ class Directory:
     """
     Data structure to hold directory information
     """
+
     def __init__(self, path: str, enabled: bool, options: list, name: str):
         self.id = None
         self.path = path
@@ -59,7 +62,7 @@ class Directory:
 
     def __str__(self):
         return self.path + " | enabled: " + str(self.enabled) + " | opts: " + str(self.options)
-    
+
     def get_option(self, key):
 
         for option in self.options:
@@ -77,7 +80,6 @@ class Directory:
 
 
 class Task:
-
     INDEX = 1
     GEN_THUMBNAIL = 2
 
@@ -268,7 +270,7 @@ class LocalStorage:
         c = conn.cursor()
         c.execute("UPDATE User SET is_admin=? WHERE username=?", (user.admin, user.username))
 
-        c.execute("DELETE FROM User_canRead_Directory WHERE username=?", (user.username, ))
+        c.execute("DELETE FROM User_canRead_Directory WHERE username=?", (user.username,))
         conn.commit()
 
         for access in user.readable_directories:
@@ -332,7 +334,7 @@ class LocalStorage:
 
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
-        c.execute("DELETE FROM Option WHERE id=?", (opt_id, ))
+        c.execute("DELETE FROM Option WHERE id=?", (opt_id,))
 
         conn.commit()
         conn.close()
@@ -385,7 +387,6 @@ class LocalStorage:
             conn.close()
 
             for db_task in tasks:
-
                 task = Task(db_task[2], db_task[1], db_task[3], db_task[4], db_task[0])
                 self.cached_tasks[task.id] = task
 
@@ -402,7 +403,7 @@ class LocalStorage:
 
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
-        c.execute("DELETE FROM Task WHERE id=?", (task_id, ))
+        c.execute("DELETE FROM Task WHERE id=?", (task_id,))
 
         conn.commit()
         c.close()

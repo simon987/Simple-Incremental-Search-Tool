@@ -13,7 +13,7 @@ class Indexer:
         self.index_name = index
         self.es = elasticsearch.Elasticsearch()
 
-        requests.head("http://localhost:9200")
+        requests.head(config.elasticsearch_url)
         if self.es.indices.exists(self.index_name):
             print("Index is already setup")
         else:
@@ -93,7 +93,7 @@ class Indexer:
             "genre": {"analyzer": "my_nGram", "type": "text"},
             "album_artist": {"analyzer": "my_nGram", "type": "text"},
             "content": {"analyzer": "content_analyser", "type": "text"},
-        }}, doc_type="file", index=self.index_name)
+        }}, doc_type="file", index=self.index_name, include_type_name=True)
 
         self.es.indices.open(index=self.index_name)
 
