@@ -3,14 +3,11 @@ default_options = {
     "ThumbnailQuality": "85",
     "ThumbnailSize": "272",
     "ThumbnailColor": "FF00FF",
-    "TextFileContentLength": "2000",
-    "PdfFileContentLength": "2000",
-    "DocxContentLength": "2000",
-    "SpreadSheetContentLength": "2000",
-    "EbookContentLength": "2000",
+    "ContentLength": "4096",
+    "TextFileContentLength": "4096",
     "MimeGuesser": "extension",  # extension, content
     "CheckSumCalculators": "",  # md5, sha1, sha256
-    "FileParsers": "media, text, picture, font, pdf, docx, spreadsheet, ebook"
+    "FileParsers": "media, text, picture, font, tika"
 }
 
 # Index documents after every X parsed files (Larger number will use more memory)

@@ -11,7 +11,7 @@ import config
 from indexer import Indexer
 from parsing import GenericFileParser, Md5CheckSumCalculator, ExtensionMimeGuesser, MediaFileParser, TextFileParser, \
     PictureFileParser, Sha1CheckSumCalculator, Sha256CheckSumCalculator, ContentMimeGuesser, MimeGuesser, FontParser, \
-    PdfFileParser, DocxParser, EbookParser, SpreadSheetParser
+    TikaFileParser
 from search import Search
 from storage import Directory
 from storage import Task, LocalStorage
@@ -226,16 +226,8 @@ class TaskManager:
             parsers.append(PictureFileParser(chksum_calcs, directory.path))
         if "font" in p:
             parsers.append(FontParser(chksum_calcs, directory.path))
-        if "pdf" in p:
-            parsers.append(
-                PdfFileParser(chksum_calcs, int(directory.get_option("PdfFileContentLength")), directory.path))
-        if "docx" in p:
-            parsers.append(DocxParser(chksum_calcs, int(directory.get_option("DocxContentLength")), directory.path))
-        if "spreadsheet" in p:
-            parsers.append(
-                SpreadSheetParser(chksum_calcs, int(directory.get_option("SpreadSheetContentLength")), directory.path))
-        if "ebook" in p:
-            parsers.append(EbookParser(chksum_calcs, int(directory.get_option("EbookContentLength")), directory.path))
+        if "tika" in p:
+            parsers.append(TikaFileParser(chksum_calcs, directory.path, int(directory.get_option("ContentLength"))))
         return parsers
 
     def execute_thumbnails(self, directory: Directory, total_files: Value, counter: Value, done: Value):

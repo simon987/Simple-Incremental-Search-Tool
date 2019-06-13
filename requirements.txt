@@ -18,3 +18,4 @@ xlrd
 six
 cairosvg
 ffmpeg-python
+tika

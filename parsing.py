@@ -1,25 +1,14 @@
 import hashlib
-import os
-import mimetypes
-import subprocess
 import json
-import chardet
+import mimetypes
+import os
+import subprocess
 import warnings
-import docx2txt
-import xlrd
-from pdfminer.pdfparser import PDFParser, PDFSyntaxError
-from pdfminer.pdfdocument import PDFDocument
-from pdfminer.pdfpage import PDFPage
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.layout import LAParams, LTTextBox, LTTextLine
-from pdfminer.converter import PDFPageAggregator
-import html2text
-from ebooklib import epub
-import ebooklib
+
+import chardet
 from PIL import Image
 from fontTools.ttLib import TTFont, TTLibError
-import six
-from six.moves import xrange
+from common import tika
 
 
 class MimeGuesser:
@@ -127,7 +116,7 @@ class GenericFileParser(FileParser):
     def __init__(self, checksum_calculators: list, root_dir: str):
         self.checksum_calculators = checksum_calculators
         self.root_dir = root_dir
-        self.root_dir_len = len(root_dir)+1
+        self.root_dir_len = len(root_dir) + 1
 
     def parse(self, full_path: str) -> dict:
         """
@@ -335,186 +324,45 @@ class FontParser(GenericFileParser):
         return info
 
 
-class PdfFileParser(GenericFileParser):
+class TikaFileParser(GenericFileParser):
+    mime_types = [
+        "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/epub+zip",
+        "application/pdf", "application/x-pdf",
+    ]
     is_default = False
 
-    def __init__(self, checksum_calculators: list, content_length: int, root_dir):
+    def __init__(self, checksum_calculators: list, root_dir: str, content_len=4096):
         super().__init__(checksum_calculators, root_dir)
+        self.content_len = content_len
 
-        self.content_length = content_length
-
-        self.mime_types = [
-            "application/pdf", "application/x-pdf"
-        ]
-
-    def parse(self, full_path: str):
+    def parse(self, full_path: str) -> dict:
+        """
+        Parse a generic file
+        :param full_path: path of the file to parse
+        :return: dict information about the file
+        """
         info = super().parse(full_path)
 
-        if self.content_length > 0:
-            with open(full_path, "rb") as f:
-
-                try:
-                    parser = PDFParser(f)
-                    document = PDFDocument(parser)
-                except PDFSyntaxError:
-                    print("couldn't parse PDF " + full_path)
-                    return info
-
-                info["content"] = ""
-                if len(document.info) > 0 and "Title" in document.info[0] and document.info[0]["Title"] != b"":
-                    if isinstance(document.info[0]["Title"], bytes):
-                        info["content"] += document.info[0]["Title"].decode("utf-8", "replace") + "\n"
-                    else:
-                        info["content"] += document.info[0]["Title"].resolve().decode("utf-8", "replace") + "\n"
-
-                try:
-                    if document.is_extractable:
-                        resource_manager = PDFResourceManager()
-                        la_params = LAParams()
-
-                        device = PDFPageAggregator(resource_manager, laparams=la_params)
-                        interpreter = PDFPageInterpreter(resource_manager, device)
-
-                        for page in PDFPage.create_pages(document):
-
-                            interpreter.process_page(page)
-                            layout = device.get_result()
-
-                            for lt_obj in layout:
-                                if isinstance(lt_obj, LTTextBox) or isinstance(lt_obj, LTTextLine):
-
-                                    text = lt_obj.get_text()
-
-                                    if len(info["content"]) + len(text) <= self.content_length:
-                                        info["content"] += text
-                                    else:
-                                        info["content"] += text[0:self.content_length - len(info["content"])]
-                                        break
-                            else:
-                                continue
-                            break
-                    else:
-                        print("PDF is not extractable: " + full_path)
-                except ValueError:
-                    print("Couldn't parse page for " + full_path)
-
-        return info
-
-
-class EbookParser(GenericFileParser):
-    is_default = False
-
-    def __init__(self, checksum_calculators: list, content_length: int, root_dir):
-        super().__init__(checksum_calculators, root_dir)
-
-        self.content_length = content_length
-
-        self.mime_types = [
-            "application/epub+zip"
-        ]
-
-        self.html2text = html2text.HTML2Text()
-        self.html2text.ignore_images = True
-        self.html2text.ignore_emphasis = True
-
-    def parse(self, full_path: str):
-        info = super().parse(full_path)
-
-        book = epub.read_epub(full_path)
-
-        info["content"] = ""
-
-        for text in book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
-
-            text = self.html2text.handle(text.content.decode("utf-8"))
-
-            if len(info["content"]) + len(text) <= self.content_length:
-                info["content"] += text
-            else:
-                info["content"] += text[0:self.content_length - len(info["content"])]
-                break
-
-        return info
-
-
-class DocxParser(GenericFileParser):
-    is_default = False
-
-    def __init__(self, checksum_calculators: list, content_length: int, root_dir):
-        super().__init__(checksum_calculators, root_dir)
-
-        self.content_length = content_length
-
-        self.mime_types = [
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ]
-
-    def parse(self, full_path: str):
-        info = super().parse(full_path)
-
-        if self.content_length > 0:
-            try:
-                text = docx2txt.process(full_path)
-
-                if len(text) < self.content_length:
-                    info["content"] = text
-                else:
-                    info["content"] = text[0:self.content_length]
-            except:
-                print("Couldn't parse Ebook: " + full_path)
-
-        return info
-
-
-class SpreadSheetParser(GenericFileParser):
-    is_default = False
-
-    def __init__(self, checksum_calculators: list, content_length: int, root_dir):
-        super().__init__(checksum_calculators, root_dir)
-
-        self.content_length = content_length
-
-        self.mime_types = [
-            "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        ]
-
-    def parse(self, full_path: str):
-        info = super().parse(full_path)
-
-        # The MIT License (MIT)
-        # Copyright (c) 2014 Dean Malmgren
-        # https://github.com/deanmalmgren/textract/blob/master/textract/parsers/xlsx_parser.py
-
-        try:
-            workbook = xlrd.open_workbook(full_path)
-
-            sheets_name = workbook.sheet_names()
-            info["content"] = ""
-
-            for names in sheets_name:
-                worksheet = workbook.sheet_by_name(names)
-                num_rows = worksheet.nrows
-                num_cells = worksheet.ncols
-
-                for curr_row in range(num_rows):
-                    new_output = []
-                    for index_col in xrange(num_cells):
-                        value = worksheet.cell_value(curr_row, index_col)
-                        if value:
-                            if isinstance(value, (int, float)):
-                                value = six.text_type(value)
-                            new_output.append(value)
-
-                    if new_output:
-                        text = u' '.join(new_output) + u'\n'
-                        if len(info["content"]) + len(text) <= self.content_length:
-                            info["content"] += text
-                        else:
-                            info["content"] += text[0:self.content_length - len(info["content"])]
-                            break
-
+        if info["size"] == 0:
             return info
 
-        except xlrd.biffh.XLRDError:
-            print("Couldn't parse spreadsheet: " + full_path)
+        tika_res = tika.from_file(full_path)
+        if "metadata" not in tika_res:
+            return info
+        tika_meta = tika_res["metadata"]
+        tika_content = tika_res["content"]
 
+        if isinstance(tika_meta["Content-Type"], list):
+            info["mime"] = tika_meta["Content-Type"][0]
+        else:
+            info["mime"] = tika_meta["Content-Type"]
+
+        if tika_content:
+            info["content"] = tika_content.lstrip()[:self.content_len]
+
+        if "Content-Encoding" in tika_meta:
+            info["encoding"] = tika_meta["Content-Encoding"]
+
+        return info

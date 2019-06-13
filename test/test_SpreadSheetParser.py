@@ -1,5 +1,5 @@
 from unittest import TestCase
-from parsing import SpreadSheetParser
+from parsing import TikaFileParser
 
 import os
 
@@ -10,7 +10,7 @@ class PdfParserTest(TestCase):
 
     def test_parse_content_xls(self):
 
-        parser = SpreadSheetParser([], 1500, "test_files/")
+        parser = TikaFileParser([], "test_files/", 1500)
 
         info = parser.parse(dir_name + "/test_files/xls1.xls")
 
@@ -18,7 +18,7 @@ class PdfParserTest(TestCase):
 
     def test_parse_content_xlsx(self):
 
-        parser = SpreadSheetParser([], 1500, "test_files/")
+        parser = TikaFileParser([], "test_files/", 1500)
 
         info = parser.parse(dir_name + "/test_files/xlsx1.xlsx")
 
