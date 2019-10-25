@@ -1,3 +1,5 @@
+*NOTE: This project is no longer being maintained. See [sist2](https://github.com/simon987/sist2)*
+
 [![CodeFactor](https://www.codefactor.io/repository/github/simon987/simple-incremental-search-tool/badge/master)](https://www.codefactor.io/repository/github/simon987/simple-incremental-search-tool/overview/master)
 
 # Simple incremental search tool
